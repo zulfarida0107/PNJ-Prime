@@ -13,3 +13,15 @@ Route::get('/dashboard-mahasiswa', function () {
 Route::get('/dashboard-mitra', function () {
     return view('mitra.dashboard');
 });
+
+Route::get('/dashboard-pimpinan', function () {
+    return view('Pimpinan atau Wadir.Pimpinan_Ringkasan_Eksekutif');
+});
+
+Route::get('/pimpinan', function () {
+    return view('Pimpinan atau Wadir.Pimpinan_Ringkasan_Eksekutif');
+});
+
+Route::get('/pimpinan/ringkasan-eksekutif', function () {
+    return view('Pimpinan atau Wadir.Pimpinan_Ringkasan_Eksekutif');
+});
