@@ -48,3 +48,14 @@ Route::get('/pimpinan', function () {
 Route::get('/pimpinan/ringkasan-eksekutif', function () {
     return view('Pimpinan atau Wadir.Pimpinan_Ringkasan_Eksekutif');
 });
+
+/*
+|--------------------------------------------------------------------------
+| Modular Route Files (Anti Merge Conflict)
+|--------------------------------------------------------------------------
+*/
+require __DIR__.'/b2c.php';
+require __DIR__.'/b2b.php';
+require __DIR__.'/p3m.php';
+require __DIR__.'/pimpinan.php';
+require __DIR__.'/admin.php';

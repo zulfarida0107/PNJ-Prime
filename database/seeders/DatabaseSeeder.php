@@ -15,6 +15,7 @@ class DatabaseSeeder extends Seeder
             UserSeeder::class,
             KategoriProdukSeeder::class,
             ProdukLayananSeeder::class,
+            PnjPrimeFoundationSeeder::class,
         ]);
     }
 }
