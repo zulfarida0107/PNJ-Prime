@@ -1,17 +1,40 @@
 <?php
 
+use App\Http\Controllers\AuthController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () {
     return view('welcome');
 });
 
+/*
+|--------------------------------------------------------------------------
+| Modul Autentikasi (Login, Gateway SSO, Login Mitra, Register KYC, Logout)
+|--------------------------------------------------------------------------
+*/
+Route::get('/login', [AuthController::class, 'showLogin'])->name('login');
+Route::post('/login', [AuthController::class, 'login'])->name('login.process');
+
+Route::get('/login/sso', [AuthController::class, 'showSso'])->name('login.sso');
+Route::post('/login/sso', [AuthController::class, 'loginSso'])->name('login.sso.process');
+
+Route::get('/login/mitra', [AuthController::class, 'showLoginMitra'])->name('login.mitra');
+
+Route::get('/register/mitra', [AuthController::class, 'showRegisterMitra'])->name('register.mitra');
+Route::post('/register/mitra', [AuthController::class, 'registerMitra'])->name('register.mitra.store');
+
+Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
+
 Route::get('/dashboard-mahasiswa', function () {
-    return view('mahasiswa.dashboard');
+    return view('Mahasiswa atau Dosen (B2C).dashboard');
 });
 
 Route::get('/dashboard-mitra', function () {
-    return view('mitra.dashboard');
+    if (view()->exists('mitra.dashboard')) {
+        return view('mitra.dashboard');
+    }
+
+    return view('Mahasiswa atau Dosen (B2C).layouts.mitra');
 });
 
 Route::get('/dashboard-pimpinan', function () {
