@@ -15,10 +15,7 @@ Route::middleware(['auth'])
     ->prefix('admin')
     ->name('admin.')
     ->group(function () {
-        // Tambahkan route modul Admin RTPU di sini.
-        // Contoh:
-        // Route::get('/dashboard', [AdminDashboardController::class, 'index'])->name('dashboard');
-        // Route::resource('/units', AdminUnitController::class);
-        // Route::get('/kurasi-produk', [AdminCurationController::class, 'index'])->name('kurasi');
-        // Route::get('/verifikasi-kyc', [AdminKycController::class, 'index'])->name('kyc');
+        // Tambahkan route modul Admin RTPU lainnya di sini.
     });
+
+require __DIR__.'/rtpu.php';
