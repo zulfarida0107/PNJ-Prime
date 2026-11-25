@@ -68,8 +68,7 @@ class AdminRTPUController extends Controller
     }
 
     /**
-     * Hitung nominal total pesanan (prioritaskan grand_total invoice jika sudah ada,
-     * jika belum hitung estimasi dari subtotal item + PPN 11%).
+     * Hitung nominal total pesanan (prioritaskan grand_total invoice jika sudah ada).
      */
     protected function computeOrderValue(Order $order): float
     {
@@ -80,6 +79,139 @@ class AdminRTPUController extends Controller
         $subtotal = (float) $order->items->sum('subtotal');
 
         return round($subtotal * 1.11, 2);
+    }
+
+    /**
+     * Hitung struktur keuangan presisi (Tarif item, Diskon B2B, Ongkir, DPP, PPN 11%, PPh 23 2%, e-Meterai, Total 100% Lunas).
+     */
+    protected function calculateOrderFinancials(Order $order): array
+    {
+        $itemsSubtotal = 0.0;
+        $hasServiceOrLab = $order->order_type === 'lab_reservation';
+        $isB2b = $order->segment === 'b2b';
+
+        foreach ($order->items as $item) {
+            $fallbackPrice = $isB2b ? ($item->product?->price_b2b ?? 0) : ($item->product?->price_b2c ?? 0);
+            $unitPrice = (float) ($item->unit_price > 0 ? $item->unit_price : $fallbackPrice);
+            $lineTotal = (float) ($item->subtotal > 0 ? $item->subtotal : ($unitPrice * $item->quantity));
+            $itemsSubtotal += $lineTotal;
+
+            $catCode = $item->product?->category?->code;
+            if (in_array($catCode, ['JSA', 'LAB'], true)) {
+                $hasServiceOrLab = true;
+            }
+        }
+
+        if ($order->invoice) {
+            $inv = $order->invoice;
+            $grossSubtotal = (float) $inv->dpp > 0 ? (float) $inv->dpp : $itemsSubtotal;
+            $discount = (float) $inv->discount_b2b;
+            $shipping = (float) $inv->shipping_cost;
+            $dppNet = max(0, $grossSubtotal - $discount + $shipping);
+            $ppn = (float) $inv->ppn_amount;
+            $pph23 = (float) $inv->pph23_amount;
+            $emeterai = (float) $inv->emeterai_amount;
+            $grandTotal = (float) $inv->grand_total;
+        } else {
+            $grossSubtotal = $itemsSubtotal;
+            $discount = 0.0;
+            $shipping = 0.0;
+            $dppNet = $grossSubtotal;
+            $ppn = round($dppNet * 0.11, 2);
+            $pph23 = ($isB2b && $hasServiceOrLab) ? round($dppNet * 0.02, 2) : 0.0;
+            $emeterai = $isB2b ? 10000.0 : 0.0;
+            $grandTotal = $dppNet + $ppn - $pph23 + $emeterai;
+        }
+
+        return [
+            'gross_subtotal' => $grossSubtotal,
+            'discount_b2b' => $discount,
+            'shipping_cost' => $shipping,
+            'dpp_net' => $dppNet,
+            'ppn_amount' => $ppn,
+            'pph23_amount' => $pph23,
+            'emeterai_amount' => $emeterai,
+            'grand_total' => $grandTotal,
+            'pph23_applicable' => $hasServiceOrLab,
+        ];
+    }
+
+    /**
+     * Siapkan payload JSON lengkap untuk Modal Invoice 03c & Modal Detail Berkas (B2C / B2B).
+     */
+    protected function buildOrderPayload(Order $order): array
+    {
+        $financials = $this->calculateOrderFinancials($order);
+        $inv = $order->invoice;
+        $user = $order->user;
+        $isB2b = $order->segment === 'b2b';
+        $firstItem = $order->items->first();
+        $companyOrName = $isB2b ? ($user?->company_name ?: ($user?->name ?? '-')) : ($user?->name ?? '-');
+        $serviceSummary = $order->items
+            ->map(fn ($i) => $i->product?->name ?? 'Item')
+            ->filter()
+            ->implode(', ');
+
+        $itemsList = $order->items->map(function ($i) use ($isB2b) {
+            $fallback = $isB2b ? ($i->product?->price_b2b ?? 0) : ($i->product?->price_b2c ?? 0);
+            $unitPrice = (float) ($i->unit_price > 0 ? $i->unit_price : $fallback);
+
+            return [
+                'name' => $i->product?->name ?? '-',
+                'code' => $i->product?->code ?? '-',
+                'unit' => $i->product?->unit?->name ?? '-',
+                'category' => $i->product?->category?->name ?? '-',
+                'quantity' => (int) $i->quantity,
+                'unit_price' => $unitPrice,
+                'subtotal' => (float) ($i->subtotal > 0 ? $i->subtotal : ($unitPrice * $i->quantity)),
+            ];
+        })->values()->all();
+
+        $actionUrl = $isB2b
+            ? route('admin.rtpu.validasi-b2b.action', $order)
+            : route('admin.rtpu.validasi-b2c.action', $order);
+
+        return [
+            'id' => $order->id,
+            'order_code' => $order->order_code,
+            'segment' => $order->segment,
+            'order_type' => $order->order_type,
+            'status' => $order->status,
+            'created_at' => optional($order->created_at)->translatedFormat('d M Y, H:i') . ' WIB',
+            'booking_date' => $order->booking_date ? $order->booking_date->translatedFormat('d M Y') : null,
+            'booking_slot' => $order->booking_slot,
+            'estimasi_hari' => $order->estimasi_hari ?? 7,
+            'shipping_address' => $order->shipping_address ?: ($user?->address ?? '-'),
+            'attachment_name' => $order->attachment_path ? basename($order->attachment_path) : null,
+            'notes' => $order->notes ?: 'Tidak ada catatan tambahan.',
+            'customer_name' => $companyOrName,
+            'pic_name' => $user?->name ?? '-',
+            'email' => $user?->email ?? '-',
+            'phone' => $user?->phone ?? '-',
+            'nim_nip' => $user?->nim_nip ?? '-',
+            'prodi_unit' => $user?->prodi_unit ?? '-',
+            'nib' => $user?->nib ?? '-',
+            'npwp' => $user?->npwp ?? '-',
+            'kyc_status' => $user?->kyc_status ?? 'pending',
+            'primary_unit' => $firstItem?->product?->unit?->name ?? '-',
+            'service_summary' => $serviceSummary ?: '-',
+            'items' => $itemsList,
+            'financials' => $financials,
+            'has_invoice' => (bool) $inv,
+            'invoice_number' => $inv?->invoice_number ?? $this->generateInvoiceNumber($order),
+            'va_number' => $inv?->va_number ?? $this->generateVaNumber($order),
+            'payment_method' => $inv?->payment_method ?? ($isB2b ? 'va_mandiri_blu' : 'qris'),
+            'payment_status' => $inv?->payment_status ?? 'unpaid',
+            'due_at' => optional($inv?->due_at)->format('Y-m-d') ?? now()->addDays(7)->format('Y-m-d'),
+            'due_at_label' => $inv?->due_at ? $inv->due_at->translatedFormat('d M Y') : now()->addDays(7)->translatedFormat('d M Y'),
+            'paid_at_label' => $inv?->paid_at ? $inv->paid_at->translatedFormat('d M Y, H:i') . ' WIB' : '-',
+            'qr_pass_code' => $inv?->qr_pass_code,
+            'apply_pph23' => $inv ? ((float) $inv->pph23_amount > 0) : $financials['pph23_applicable'],
+            'apply_emeterai' => $inv ? ((float) $inv->emeterai_amount > 0) : $isB2b,
+            'invoice_submit_url' => route('admin.rtpu.validasi-b2b.invoice', $order),
+            'action_url' => $actionUrl,
+            'print_invoice_url' => route('admin.rtpu.print.invoice', $order),
+        ];
     }
 
     /**
@@ -114,37 +246,66 @@ class AdminRTPUController extends Controller
     }
 
     /**
-     * Halaman 1: Dashboard Eksekutif Admin RTPU.
+     * Terapkan filter kategori (BRG / JSA / LAB) pada query Order.
+     */
+    protected function applyCategoryFilter($query, string $category): void
+    {
+        if (in_array($category, ['BRG', 'JSA', 'LAB'], true)) {
+            $query->whereHas('items.product.category', fn ($c) => $c->where('code', $category));
+        }
+    }
+
+    /**
+     * Hitung jumlah order per kategori (Semua, BRG, JSA, LAB) untuk segmen tertentu atau semua.
+     */
+    protected function getCategoryCounts(?string $segment = null): array
+    {
+        $base = Order::query();
+        if (in_array($segment, ['b2c', 'b2b'], true)) {
+            $base->where('segment', $segment);
+        }
+
+        return [
+            'semua' => (clone $base)->count(),
+            'BRG' => (clone $base)->whereHas('items.product.category', fn ($c) => $c->where('code', 'BRG'))->count(),
+            'JSA' => (clone $base)->whereHas('items.product.category', fn ($c) => $c->where('code', 'JSA'))->count(),
+            'LAB' => (clone $base)->whereHas('items.product.category', fn ($c) => $c->where('code', 'LAB'))->count(),
+        ];
+    }
+
+    /**
+     * Ambil daftar log verifikasi terbaru untuk modal Log Verifikasi (B2C / B2B).
+     */
+    protected function getVerificationLogs(?string $segment = null)
+    {
+        $q = Order::with(['user', 'invoice', 'items.product.unit'])->latest('updated_at');
+        if (in_array($segment, ['b2c', 'b2b'], true)) {
+            $q->where('segment', $segment);
+        }
+
+        return $q->take(10)->get();
+    }
+
+    /**
+     * Halaman 1: Dashboard Utama RTPU (Mockup 01).
      */
     public function dashboard(Request $request): View
     {
         $portalUser = $this->resolvePortalUser();
 
+        $category = $request->query('category', 'semua');
         $tab = $request->query('tab', 'semua');
         $search = trim((string) $request->query('q', ''));
 
-        // 4 KPI aktual dari database
+        // 4 KPI aktual database
         $totalOrders = Order::count();
+        $recentOrdersToday = Order::where('created_at', '>=', now()->subDay())->count();
         $waitingValidationOrders = Order::whereIn('status', ['menunggu_verifikasi', 'menunggu_pembayaran'])->count();
-        $waitingCurationProducts = Product::where('status', 'menunggu_kurasi_rtpu')->count();
-
-        // Nilai transaksi tervalidasi (invoice paid atau order diproses/siap_diambil/selesai)
-        $validatedRevenue = (float) Invoice::where('payment_status', 'paid')->sum('grand_total');
-        $unpaidInvoicedTotal = (float) Invoice::where('payment_status', 'unpaid')->sum('grand_total');
-        $totalAllInvoiced = (float) Invoice::sum('grand_total');
-
-        // Komposisi kanal B2C vs B2B
-        $b2cOrdersCount = Order::where('segment', 'b2c')->count();
-        $b2bOrdersCount = Order::where('segment', 'b2b')->count();
-        $b2cRevenue = (float) Invoice::whereHas('order', fn ($q) => $q->where('segment', 'b2c'))->sum('grand_total');
-        $b2bRevenue = (float) Invoice::whereHas('order', fn ($q) => $q->where('segment', 'b2b'))->sum('grand_total');
-        $b2cShare = $totalOrders > 0 ? round(($b2cOrdersCount / $totalOrders) * 100, 1) : 0;
-        $b2bShare = $totalOrders > 0 ? round(($b2bOrdersCount / $totalOrders) * 100, 1) : 0;
-
         $activeCatalogCount = Product::where('status', 'tayang')->count();
         $totalCatalogCount = Product::count();
+        $validatedRevenue = (float) Invoice::where('payment_status', 'paid')->sum('grand_total');
+        $totalInvoicedValue = (float) Invoice::sum('grand_total');
 
-        // Daftar pesanan terbaru dengan filter tab cepat
         $query = Order::with(['user', 'items.product.unit', 'items.product.category', 'invoice'])
             ->orderByRaw("CASE status
                 WHEN 'menunggu_verifikasi' THEN 1
@@ -164,53 +325,37 @@ class AdminRTPUController extends Controller
             $query->whereIn('status', ['menunggu_verifikasi', 'menunggu_pembayaran']);
         }
 
+        $this->applyCategoryFilter($query, $category);
         $this->applyOrderSearch($query, $search);
 
-        $recentOrders = $query->paginate(8)->withQueryString();
-
-        // Hitungan per tab
-        $tabCounts = [
-            'semua' => $totalOrders,
-            'b2c' => $b2cOrdersCount,
-            'b2b' => $b2bOrdersCount,
-            'perlu_validasi' => $waitingValidationOrders,
-        ];
-
-        // Produk menunggu kurasi P3M (ringkasan untuk panel samping)
-        $curationPreview = Product::with(['unit', 'category'])
-            ->where('status', 'menunggu_kurasi_rtpu')
-            ->latest('updated_at')
-            ->take(3)
-            ->get();
+        $recentOrders = $query->paginate(6)->withQueryString();
+        $orderPayloads = [];
+        foreach ($recentOrders as $ord) {
+            $orderPayloads[$ord->id] = $this->buildOrderPayload($ord);
+        }
 
         return view('admin-rtpu.dashboard', array_merge(
             $this->sharedLayoutData($portalUser),
             [
                 'totalOrders' => $totalOrders,
+                'recentOrdersToday' => $recentOrdersToday,
                 'waitingValidationOrders' => $waitingValidationOrders,
-                'waitingCurationProducts' => $waitingCurationProducts,
-                'validatedRevenue' => $validatedRevenue,
-                'unpaidInvoicedTotal' => $unpaidInvoicedTotal,
-                'totalAllInvoiced' => $totalAllInvoiced,
-                'b2cOrdersCount' => $b2cOrdersCount,
-                'b2bOrdersCount' => $b2bOrdersCount,
-                'b2cRevenue' => $b2cRevenue,
-                'b2bRevenue' => $b2bRevenue,
-                'b2cShare' => $b2cShare,
-                'b2bShare' => $b2bShare,
                 'activeCatalogCount' => $activeCatalogCount,
                 'totalCatalogCount' => $totalCatalogCount,
+                'validatedRevenue' => $validatedRevenue,
+                'totalInvoicedValue' => $totalInvoicedValue,
                 'recentOrders' => $recentOrders,
-                'tabCounts' => $tabCounts,
+                'orderPayloads' => $orderPayloads,
+                'categoryCounts' => $this->getCategoryCounts(),
+                'activeCategory' => $category,
                 'activeTab' => $tab,
                 'search' => $search,
-                'curationPreview' => $curationPreview,
             ]
         ));
     }
 
     /**
-     * Halaman 2: Daftar Antrean Pesanan Terpadu (B2C & B2B).
+     * Halaman 2: Semua Antrean Validasi Pesanan & Terbitkan Invoice (Mockup 02).
      */
     public function antrean(Request $request): View
     {
@@ -218,19 +363,14 @@ class AdminRTPUController extends Controller
 
         $segment = $request->query('segment', 'semua');
         $status = $request->query('status', 'semua');
+        $category = $request->query('category', 'semua');
         $unitId = $request->query('unit_id');
         $orderType = $request->query('order_type', 'semua');
+        $perPage = (int) $request->query('per_page', 10);
+        if (! in_array($perPage, [5, 10, 20, 50], true)) {
+            $perPage = 10;
+        }
         $search = trim((string) $request->query('q', ''));
-
-        $counts = [
-            'semua' => Order::count(),
-            'b2c' => Order::where('segment', 'b2c')->count(),
-            'b2b' => Order::where('segment', 'b2b')->count(),
-            'menunggu_verifikasi' => Order::where('status', 'menunggu_verifikasi')->count(),
-            'menunggu_pembayaran' => Order::where('status', 'menunggu_pembayaran')->count(),
-            'diproses' => Order::where('status', 'diproses')->count(),
-            'selesai' => Order::where('status', 'selesai')->count(),
-        ];
 
         $query = Order::with(['user', 'items.product.unit', 'items.product.category', 'invoice'])
             ->orderByRaw("CASE status
@@ -263,49 +403,45 @@ class AdminRTPUController extends Controller
             $query->whereHas('items.product', fn ($p) => $p->where('unit_id', $unitId));
         }
 
+        $this->applyCategoryFilter($query, $category);
         $this->applyOrderSearch($query, $search);
 
-        $orders = $query->paginate(10)->withQueryString();
+        $orders = $query->paginate($perPage)->withQueryString();
+        $orderPayloads = [];
+        foreach ($orders as $ord) {
+            $orderPayloads[$ord->id] = $this->buildOrderPayload($ord);
+        }
+
         $units = Unit::orderBy('name')->get();
 
         return view('admin-rtpu.antrean', array_merge(
             $this->sharedLayoutData($portalUser),
             [
                 'orders' => $orders,
+                'orderPayloads' => $orderPayloads,
                 'units' => $units,
-                'counts' => $counts,
+                'categoryCounts' => $this->getCategoryCounts($segment !== 'semua' ? $segment : null),
                 'segment' => $segment,
                 'status' => $status,
+                'activeCategory' => $category,
                 'selectedUnitId' => $unitId,
                 'orderType' => $orderType,
+                'perPage' => $perPage,
                 'search' => $search,
             ]
         ));
     }
 
     /**
-     * Halaman 3a: Index Validasi Pesanan B2C (otomatis memuat pesanan B2C prioritas).
+     * Halaman 3a: Verifikasi Pesanan Mahasiswa (B2C) — Full-Width (Mockup 03a).
      */
     public function validasiB2cIndex(Request $request): View
     {
-        $search = trim((string) $request->query('q', ''));
-
-        $firstOrder = Order::where('segment', 'b2c')
-            ->orderByRaw("CASE status
-                WHEN 'menunggu_verifikasi' THEN 1
-                WHEN 'menunggu_pembayaran' THEN 2
-                WHEN 'diproses' THEN 3
-                WHEN 'siap_diambil' THEN 4
-                WHEN 'selesai' THEN 5
-                ELSE 6 END")
-            ->latest('updated_at')
-            ->first();
-
-        return $this->renderValidasiB2c($request, $firstOrder, $search);
+        return $this->renderValidasiB2c($request, null);
     }
 
     /**
-     * Halaman 3b: Detail & Validasi Pesanan B2C spesifik.
+     * Halaman 3b: Verifikasi Pesanan B2C dengan auto-open modal detail untuk {order}.
      */
     public function validasiB2c(Request $request, Order $order): View|RedirectResponse
     {
@@ -313,14 +449,17 @@ class AdminRTPUController extends Controller
             return redirect()->route('admin.rtpu.validasi-b2b', $order);
         }
 
-        return $this->renderValidasiB2c($request, $order, trim((string) $request->query('q', '')));
+        return $this->renderValidasiB2c($request, $order);
     }
 
-    protected function renderValidasiB2c(Request $request, ?Order $activeOrder, string $search = ''): View
+    protected function renderValidasiB2c(Request $request, ?Order $focusOrder): View
     {
         $portalUser = $this->resolvePortalUser();
 
-        $b2cQueueQuery = Order::with(['user', 'items.product.unit', 'items.product.category', 'invoice'])
+        $category = $request->query('category', 'semua');
+        $search = trim((string) $request->query('q', ''));
+
+        $query = Order::with(['user', 'items.product.unit', 'items.product.category', 'items.product.subCategory', 'invoice'])
             ->where('segment', 'b2c')
             ->orderByRaw("CASE status
                 WHEN 'menunggu_verifikasi' THEN 1
@@ -331,32 +470,48 @@ class AdminRTPUController extends Controller
                 ELSE 6 END")
             ->latest('updated_at');
 
-        $this->applyOrderSearch($b2cQueueQuery, $search);
-        $b2cOrders = $b2cQueueQuery->get();
+        $this->applyCategoryFilter($query, $category);
+        $this->applyOrderSearch($query, $search);
 
-        if ($activeOrder) {
-            $activeOrder->load(['user', 'items.product.unit', 'items.product.category', 'items.product.subCategory', 'invoice']);
+        $b2cOrders = $query->paginate(8)->withQueryString();
+        $orderPayloads = [];
+        foreach ($b2cOrders as $ord) {
+            $orderPayloads[$ord->id] = $this->buildOrderPayload($ord);
         }
 
-        // KPI ringkas kanal B2C
+        $autoOpenPayload = null;
+        if ($focusOrder) {
+            $focusOrder->load(['user', 'items.product.unit', 'items.product.category', 'items.product.subCategory', 'invoice']);
+            $autoOpenPayload = $this->buildOrderPayload($focusOrder);
+            $orderPayloads[$focusOrder->id] = $autoOpenPayload;
+        }
+
         $b2cStats = [
             'pending' => Order::where('segment', 'b2c')->whereIn('status', ['menunggu_verifikasi', 'menunggu_pembayaran'])->count(),
             'total_items' => (int) DB::table('order_items')
                 ->join('orders', 'order_items.order_id', '=', 'orders.id')
                 ->where('orders.segment', 'b2c')
                 ->sum('order_items.quantity'),
-            'paid_invoices' => Invoice::where('payment_status', 'paid')
-                ->whereHas('order', fn ($q) => $q->where('segment', 'b2c'))
-                ->count(),
+            'active_items_processing' => (int) DB::table('order_items')
+                ->join('orders', 'order_items.order_id', '=', 'orders.id')
+                ->where('orders.segment', 'b2c')
+                ->whereIn('orders.status', ['diproses', 'siap_diambil'])
+                ->sum('order_items.quantity'),
+            'active_va' => Invoice::whereHas('order', fn ($q) => $q->where('segment', 'b2c'))->count(),
             'total_b2c_orders' => Order::where('segment', 'b2c')->count(),
         ];
 
         return view('admin-rtpu.validasi-b2c', array_merge(
             $this->sharedLayoutData($portalUser),
             [
-                'order' => $activeOrder,
+                'order' => $focusOrder,
                 'b2cOrders' => $b2cOrders,
+                'orderPayloads' => $orderPayloads,
+                'autoOpenPayload' => $autoOpenPayload,
                 'b2cStats' => $b2cStats,
+                'categoryCounts' => $this->getCategoryCounts('b2c'),
+                'activeCategory' => $category,
+                'verificationLogs' => $this->getVerificationLogs('b2c'),
                 'search' => $search,
             ]
         ));
@@ -387,7 +542,6 @@ class AdminRTPUController extends Controller
 
         DB::transaction(function () use ($order, $action, $validated) {
             if ($action === 'approve') {
-                // Jika belum ada invoice B2C, terbitkan tagihan lunas 100% secara otomatis
                 if (! $order->invoice) {
                     $dpp = (float) $order->items->sum('subtotal');
                     $ppn = round($dpp * 0.11, 2);
@@ -461,41 +615,26 @@ class AdminRTPUController extends Controller
         });
 
         $messages = [
-            'approve' => "Pesanan B2C {$order->order_code} berhasil diverifikasi dan disetujui.",
-            'mark_paid_process' => "Pembayaran pesanan {$order->order_code} terkonfirmasi lunas dan status diperbarui menjadi Diproses.",
+            'approve' => "Pesanan B2C {$order->order_code} berhasil diverifikasi dan invoice resmi diterbitkan.",
+            'mark_paid_process' => "Pembayaran pesanan {$order->order_code} terkonfirmasi lunas 100% dan status diperbarui menjadi Diproses.",
             'mark_ready' => "Pesanan {$order->order_code} ditandai Siap Diambil oleh pemesan.",
             'mark_done' => "Pesanan {$order->order_code} telah ditandai Selesai.",
-            'reject' => "Pesanan {$order->order_code} telah ditolak beserta alasan penolakan yang tercatat di sistem.",
+            'reject' => "Pesanan {$order->order_code} telah ditolak beserta catatan penolakan resmi.",
         ];
 
-        return redirect()
-            ->route('admin.rtpu.validasi-b2c', $order)
-            ->with('success', $messages[$action]);
+        return back()->with('success', $messages[$action]);
     }
 
     /**
-     * Halaman 4a: Index Validasi Pesanan B2B (otomatis memuat pesanan B2B prioritas).
+     * Halaman 4a: Verifikasi Pesanan B2B — Full-Width (Mockup 03b).
      */
     public function validasiB2bIndex(Request $request): View
     {
-        $search = trim((string) $request->query('q', ''));
-
-        $firstOrder = Order::where('segment', 'b2b')
-            ->orderByRaw("CASE status
-                WHEN 'menunggu_verifikasi' THEN 1
-                WHEN 'menunggu_pembayaran' THEN 2
-                WHEN 'diproses' THEN 3
-                WHEN 'siap_diambil' THEN 4
-                WHEN 'selesai' THEN 5
-                ELSE 6 END")
-            ->latest('updated_at')
-            ->first();
-
-        return $this->renderValidasiB2b($request, $firstOrder, $search);
+        return $this->renderValidasiB2b($request, null);
     }
 
     /**
-     * Halaman 4b: Detail & Validasi Pesanan B2B spesifik.
+     * Halaman 4b: Verifikasi Pesanan B2B dengan auto-open modal detail untuk {order}.
      */
     public function validasiB2b(Request $request, Order $order): View|RedirectResponse
     {
@@ -503,14 +642,17 @@ class AdminRTPUController extends Controller
             return redirect()->route('admin.rtpu.validasi-b2c', $order);
         }
 
-        return $this->renderValidasiB2b($request, $order, trim((string) $request->query('q', '')));
+        return $this->renderValidasiB2b($request, $order);
     }
 
-    protected function renderValidasiB2b(Request $request, ?Order $activeOrder, string $search = ''): View
+    protected function renderValidasiB2b(Request $request, ?Order $focusOrder): View
     {
         $portalUser = $this->resolvePortalUser();
 
-        $b2bQueueQuery = Order::with(['user', 'items.product.unit', 'items.product.category', 'invoice'])
+        $category = $request->query('category', 'semua');
+        $search = trim((string) $request->query('q', ''));
+
+        $query = Order::with(['user', 'items.product.unit', 'items.product.category', 'items.product.subCategory', 'invoice'])
             ->where('segment', 'b2b')
             ->orderByRaw("CASE status
                 WHEN 'menunggu_verifikasi' THEN 1
@@ -521,18 +663,20 @@ class AdminRTPUController extends Controller
                 ELSE 6 END")
             ->latest('updated_at');
 
-        $this->applyOrderSearch($b2bQueueQuery, $search);
-        $b2bOrders = $b2bQueueQuery->get();
+        $this->applyCategoryFilter($query, $category);
+        $this->applyOrderSearch($query, $search);
 
-        $financials = null;
-        $previewInvoiceNumber = null;
-        $previewVaNumber = null;
+        $b2bOrders = $query->paginate(8)->withQueryString();
+        $orderPayloads = [];
+        foreach ($b2bOrders as $ord) {
+            $orderPayloads[$ord->id] = $this->buildOrderPayload($ord);
+        }
 
-        if ($activeOrder) {
-            $activeOrder->load(['user', 'items.product.unit', 'items.product.category', 'items.product.subCategory', 'invoice']);
-            $financials = $this->calculateB2bFinancials($activeOrder);
-            $previewInvoiceNumber = $activeOrder->invoice?->invoice_number ?? $this->generateInvoiceNumber($activeOrder);
-            $previewVaNumber = $activeOrder->invoice?->va_number ?? $this->generateVaNumber($activeOrder);
+        $autoOpenPayload = null;
+        if ($focusOrder) {
+            $focusOrder->load(['user', 'items.product.unit', 'items.product.category', 'items.product.subCategory', 'invoice']);
+            $autoOpenPayload = $this->buildOrderPayload($focusOrder);
+            $orderPayloads[$focusOrder->id] = $autoOpenPayload;
         }
 
         $b2bStats = [
@@ -542,73 +686,23 @@ class AdminRTPUController extends Controller
             'paid_revenue' => (float) Invoice::where('payment_status', 'paid')
                 ->whereHas('order', fn ($q) => $q->where('segment', 'b2b'))
                 ->sum('grand_total'),
+            'total_b2b_orders' => Order::where('segment', 'b2b')->count(),
         ];
 
         return view('admin-rtpu.validasi-b2b', array_merge(
             $this->sharedLayoutData($portalUser),
             [
-                'order' => $activeOrder,
+                'order' => $focusOrder,
                 'b2bOrders' => $b2bOrders,
+                'orderPayloads' => $orderPayloads,
+                'autoOpenPayload' => $autoOpenPayload,
                 'b2bStats' => $b2bStats,
-                'financials' => $financials,
-                'previewInvoiceNumber' => $previewInvoiceNumber,
-                'previewVaNumber' => $previewVaNumber,
+                'categoryCounts' => $this->getCategoryCounts('b2b'),
+                'activeCategory' => $category,
+                'verificationLogs' => $this->getVerificationLogs('b2b'),
                 'search' => $search,
             ]
         ));
-    }
-
-    /**
-     * Hitung struktur keuangan presisi B2B (Tarif B2B, Diskon, Ongkir, DPP, PPN 11%, PPh 23 2%, e-Meterai, Total 100% Lunas).
-     */
-    protected function calculateB2bFinancials(Order $order): array
-    {
-        $itemsSubtotal = 0.0;
-        $hasServiceOrLab = $order->order_type === 'lab_reservation';
-
-        foreach ($order->items as $item) {
-            $b2bPrice = (float) ($item->unit_price > 0 ? $item->unit_price : ($item->product?->price_b2b ?? 0));
-            $lineTotal = (float) ($item->subtotal > 0 ? $item->subtotal : ($b2bPrice * $item->quantity));
-            $itemsSubtotal += $lineTotal;
-
-            $catCode = $item->product?->category?->code;
-            if (in_array($catCode, ['JSA', 'LAB'], true)) {
-                $hasServiceOrLab = true;
-            }
-        }
-
-        if ($order->invoice) {
-            $inv = $order->invoice;
-            $grossSubtotal = (float) $inv->dpp > 0 ? (float) $inv->dpp : $itemsSubtotal;
-            $discount = (float) $inv->discount_b2b;
-            $shipping = (float) $inv->shipping_cost;
-            $dppNet = max(0, $grossSubtotal - $discount + $shipping);
-            $ppn = (float) $inv->ppn_amount;
-            $pph23 = (float) $inv->pph23_amount;
-            $emeterai = (float) $inv->emeterai_amount;
-            $grandTotal = (float) $inv->grand_total;
-        } else {
-            $grossSubtotal = $itemsSubtotal;
-            $discount = 0.0;
-            $shipping = 0.0;
-            $dppNet = $grossSubtotal;
-            $ppn = round($dppNet * 0.11, 2);
-            $pph23 = $hasServiceOrLab ? round($dppNet * 0.02, 2) : 0.0;
-            $emeterai = $dppNet >= 5000000 ? 10000.0 : 10000.0;
-            $grandTotal = $dppNet + $ppn - $pph23 + $emeterai;
-        }
-
-        return [
-            'gross_subtotal' => $grossSubtotal,
-            'discount_b2b' => $discount,
-            'shipping_cost' => $shipping,
-            'dpp_net' => $dppNet,
-            'ppn_amount' => $ppn,
-            'pph23_amount' => $pph23,
-            'emeterai_amount' => $emeterai,
-            'grand_total' => $grandTotal,
-            'pph23_applicable' => $hasServiceOrLab,
-        ];
     }
 
     /**
@@ -640,7 +734,6 @@ class AdminRTPUController extends Controller
 
         $order->load(['items.product.category', 'invoice']);
 
-        // Hitung subtotal komersial B2B aktual dari item pesanan
         $grossSubtotal = 0.0;
         foreach ($order->items as $item) {
             $b2bPrice = (float) ($item->unit_price > 0 ? $item->unit_price : ($item->product?->price_b2b ?? 0));
@@ -716,8 +809,7 @@ class AdminRTPUController extends Controller
             $order->update($orderUpdate);
         });
 
-        return redirect()
-            ->route('admin.rtpu.validasi-b2b', $order)
+        return back()
             ->with('success', "Invoice resmi BLU {$invoiceNumber} (Skema 100% Lunas) berhasil diterbitkan dan tersimpan untuk pesanan {$order->order_code}.");
     }
 
@@ -794,9 +886,7 @@ class AdminRTPUController extends Controller
             'reject' => "Pesanan B2B {$order->order_code} telah ditolak beserta catatan penolakan resmi.",
         ];
 
-        return redirect()
-            ->route('admin.rtpu.validasi-b2b', $order)
-            ->with('success', $messages[$action]);
+        return back()->with('success', $messages[$action]);
     }
 
     /**
@@ -808,6 +898,7 @@ class AdminRTPUController extends Controller
 
         $segment = $request->query('segment', 'semua');
         $status = $request->query('status', 'semua');
+        $category = $request->query('category', 'semua');
         $unitId = $request->query('unit_id');
         $search = trim((string) $request->query('q', ''));
 
@@ -829,6 +920,7 @@ class AdminRTPUController extends Controller
             $query->whereHas('items.product', fn ($p) => $p->where('unit_id', $unitId));
         }
 
+        $this->applyCategoryFilter($query, $category);
         $this->applyOrderSearch($query, $search);
 
         $orders = $query->get();
@@ -886,6 +978,7 @@ class AdminRTPUController extends Controller
 
         $segment = $request->query('segment', 'semua');
         $status = $request->query('status', 'semua');
+        $category = $request->query('category', 'semua');
         $unitId = $request->query('unit_id');
         $search = trim((string) $request->query('q', ''));
 
@@ -907,6 +1000,7 @@ class AdminRTPUController extends Controller
             $query->whereHas('items.product', fn ($p) => $p->where('unit_id', $unitId));
         }
 
+        $this->applyCategoryFilter($query, $category);
         $this->applyOrderSearch($query, $search);
 
         $orders = $query->get();
@@ -954,8 +1048,7 @@ class AdminRTPUController extends Controller
 
         $order->load(['user', 'items.product.unit', 'items.product.category', 'invoice']);
 
-        // Jika invoice belum terbit di database, siapkan kalkulasi fallback agar cetak tetap bersih tanpa error null
-        $financials = $this->calculateB2bFinancials($order);
+        $financials = $this->calculateOrderFinancials($order);
         $pimpinanRtpu = PortalUser::where('role', 'pimpinan_rtpu')->first();
 
         return view('admin-rtpu.pdf.invoice', [

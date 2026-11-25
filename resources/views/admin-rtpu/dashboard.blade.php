@@ -1,410 +1,294 @@
 @extends('admin-rtpu.layouts.app')
 
-@section('title', 'Dashboard Eksekutif Admin RTPU')
+@section('title', 'Dashboard Utama RTPU')
 
 @section('content')
-<div class="space-y-4">
-    {{-- Header Halaman --}}
-    <div class="flex flex-col md:flex-row md:items-end justify-between gap-3">
+<div class="space-y-5">
+    {{-- Header Halaman Persis Mockup 01 --}}
+    <div class="flex flex-col md:flex-row md:items-center justify-between gap-3">
         <div>
-            <p class="text-[11px] font-bold uppercase tracking-wider text-slate-500">
-                UPA-RTPU Politeknik Negeri Jakarta &bull; Manajemen Operasional &amp; Keuangan
-            </p>
-            <h1 class="text-[20px] font-extrabold text-slate-900 tracking-tight leading-snug mt-0.5">
-                Dashboard Eksekutif Admin RTPU
+            <h1 class="text-[22px] font-extrabold text-slate-900 tracking-tight leading-snug">
+                Dashboard Utama RTPU
             </h1>
-            <p class="text-[12.5px] text-slate-500 mt-0.5">
-                Pantau transaksi masuk B2C &amp; B2B, validasi operasional unit, serta penerbitan tagihan resmi BLU PNJ secara terpusat.
+            <p class="text-[13px] text-slate-500 mt-0.5">
+                Ringkasan aktivitas transaksi produk, jasa, dan reservasi fasilitas.
             </p>
         </div>
 
-        <div class="flex flex-wrap items-center gap-2">
-            <a href="{{ route('admin.rtpu.antrean') }}"
-               class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white hover:bg-slate-50 border border-slate-200/90 text-[12px] font-semibold text-slate-700 transition-all active:scale-95">
-                <svg class="w-3.5 h-3.5 text-slate-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
-                <span>Antrean Lengkap</span>
-            </a>
-            <a href="{{ route('admin.rtpu.print.laporan', array_filter(['q' => $search])) }}"
+        <div class="flex flex-wrap items-center gap-2.5">
+            <div class="inline-flex items-center gap-2 px-3.5 py-2 rounded-lg bg-white border border-slate-200/90 text-[12.5px] font-semibold text-slate-700 shadow-[0_1px_2px_rgba(15,23,42,0.03)] tabular-nums">
+                <svg class="w-4 h-4 text-slate-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+                <span>Semester Ganjil 2026/2027</span>
+            </div>
+            <a href="{{ route('admin.rtpu.print.laporan', array_filter(['category' => $activeCategory !== 'semua' ? $activeCategory : null, 'q' => $search])) }}"
                target="_blank" rel="noopener noreferrer"
-               class="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg bg-[#003366] hover:bg-[#1E3A8A] text-white text-[12px] font-semibold transition-all active:scale-95">
-                <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
-                <span>Cetak Laporan Operasional (.PDF)</span>
+               class="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-[#00877A] hover:bg-[#006E63] text-white text-[12.5px] font-semibold shadow-sm transition-all active:scale-[0.98]">
+                <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                <span>Ekspor Laporan</span>
             </a>
         </div>
     </div>
 
-    {{-- 4 KPI Cards Berbasis Data Aktual Database --}}
-    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5">
-        {{-- KPI 1: Total Pesanan Masuk --}}
-        <div class="bg-white rounded-lg border border-slate-200/80 p-4 transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md">
+    {{-- Baris 4 Kartu KPI Persis Mockup 01 --}}
+    <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
+        {{-- KPI 1: Pesanan Baru Masuk --}}
+        <div class="bg-white rounded-xl border border-slate-200/80 shadow-[0_1px_2px_rgba(15,23,42,0.03)] p-5 flex flex-col justify-between">
             <div class="flex items-start justify-between gap-2">
-                <div>
-                    <p class="text-[11.5px] font-semibold text-slate-500">Total Pesanan Masuk</p>
-                    <div class="mt-1.5 flex items-baseline gap-1.5 tabular-nums">
-                        <span class="text-[26px] font-extrabold text-slate-900 leading-none">{{ $totalOrders }}</span>
-                        <span class="text-[12px] font-medium text-slate-500">Pesanan</span>
-                    </div>
-                </div>
-                <div class="w-8 h-8 rounded-lg bg-slate-50 border border-slate-200/70 text-slate-600 flex items-center justify-center shrink-0">
-                    <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>
+                <p class="text-[12.5px] font-semibold text-slate-500">Pesanan Baru Masuk</p>
+                <div class="w-9 h-9 rounded-lg bg-orange-50 text-orange-500 flex items-center justify-center shrink-0">
+                    <svg width="18" height="18" class="w-[18px] h-[18px] shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>
                 </div>
             </div>
-            <div class="mt-3 flex items-center gap-2.5 text-[11px] font-semibold text-slate-600 tabular-nums">
-                <span>{{ $b2cOrdersCount }} B2C</span>
-                <span class="text-slate-300">&bull;</span>
-                <span class="text-[#003366]">{{ $b2bOrdersCount }} B2B</span>
+            <div class="mt-3">
+                <p class="text-[28px] font-extrabold text-orange-500 leading-none tabular-nums">{{ $totalOrders }}</p>
+                <p class="mt-2.5 text-[11.5px] font-medium text-slate-500 flex items-center gap-1 tabular-nums">
+                    <svg width="14" height="14" class="w-3.5 h-3.5 text-orange-500 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg>
+                    <span><strong class="text-orange-600">+{{ $recentOrdersToday }}</strong> pesanan 24 jam terakhir</span>
+                </p>
             </div>
         </div>
 
-        {{-- KPI 2: Pesanan Menunggu Validasi --}}
-        <div class="bg-white rounded-lg border border-slate-200/80 p-4 transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md">
+        {{-- KPI 2: Menunggu Persetujuan Pesanan --}}
+        <div class="bg-white rounded-xl border border-slate-200/80 shadow-[0_1px_2px_rgba(15,23,42,0.03)] p-5 flex flex-col justify-between">
             <div class="flex items-start justify-between gap-2">
-                <div>
-                    <p class="text-[11.5px] font-semibold text-slate-500">Pesanan Menunggu Validasi</p>
-                    <div class="mt-1.5 flex items-baseline gap-1.5 tabular-nums">
-                        <span class="text-[26px] font-extrabold text-slate-900 leading-none">{{ $waitingValidationOrders }}</span>
-                        <span class="text-[12px] font-medium text-slate-500">Antrean</span>
-                    </div>
-                </div>
-                <div class="w-8 h-8 rounded-lg bg-amber-50 border border-amber-200/70 text-amber-700 flex items-center justify-center shrink-0">
-                    <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                <p class="text-[12.5px] font-semibold text-slate-500 leading-snug">Menunggu Persetujuan Pesanan</p>
+                <div class="w-9 h-9 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center shrink-0">
+                    <svg width="18" height="18" class="w-[18px] h-[18px] shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><rect x="8" y="2" width="8" height="4" rx="1"/><path d="M9 14l2 2 4-4"/></svg>
                 </div>
             </div>
-            <div class="mt-3 flex items-center justify-between gap-2">
-                <span class="inline-flex items-center px-2 py-0.5 rounded bg-amber-50 text-amber-700 ring-1 ring-inset ring-amber-600/20 text-[10.5px] font-bold">
-                    Perlu Verifikasi &amp; Tagihan
-                </span>
-                <a href="{{ route('admin.rtpu.antrean', ['status' => 'perlu_validasi']) }}" class="text-[11px] font-bold text-[#003366] hover:underline">Tinjau &rarr;</a>
+            <div class="mt-3">
+                <p class="text-[28px] font-extrabold text-blue-600 leading-none tabular-nums">{{ $waitingValidationOrders }}</p>
+                <p class="mt-2.5 text-[11.5px] font-medium text-slate-500 flex items-center gap-1.5">
+                    <svg width="14" height="14" class="w-3.5 h-3.5 text-blue-500 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                    <span>Butuh verifikasi &amp; penerbitan invoice</span>
+                </p>
             </div>
         </div>
 
-        {{-- KPI 3: Produk Menunggu Kurasi --}}
-        <div class="bg-white rounded-lg border border-slate-200/80 p-4 transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md">
+        {{-- KPI 3: Produk & Layanan Aktif --}}
+        <div class="bg-white rounded-xl border border-slate-200/80 shadow-[0_1px_2px_rgba(15,23,42,0.03)] p-5 flex flex-col justify-between">
             <div class="flex items-start justify-between gap-2">
-                <div>
-                    <p class="text-[11.5px] font-semibold text-slate-500">Produk Menunggu Kurasi</p>
-                    <div class="mt-1.5 flex items-baseline gap-1.5 tabular-nums">
-                        <span class="text-[26px] font-extrabold text-slate-900 leading-none">{{ $waitingCurationProducts }}</span>
-                        <span class="text-[12px] font-medium text-slate-500">Usulan P3M</span>
-                    </div>
-                </div>
-                <div class="w-8 h-8 rounded-lg bg-[#EFF6FF] border border-[#BFDBFE] text-[#003366] flex items-center justify-center shrink-0">
-                    <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg>
+                <p class="text-[12.5px] font-semibold text-slate-500">Produk &amp; Layanan Aktif</p>
+                <div class="w-9 h-9 rounded-lg bg-[#F0FDFA] text-[#00877A] flex items-center justify-center shrink-0">
+                    <svg width="18" height="18" class="w-[18px] h-[18px] shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 3h6"/><path d="M10 3v6.5L5.2 18.2A2 2 0 0 0 6.9 21h10.2a2 2 0 0 0 1.7-2.8L14 9.5V3"/><path d="M8.5 14h7"/></svg>
                 </div>
             </div>
-            <p class="mt-3 text-[11px] font-semibold text-slate-600 tabular-nums">
-                {{ $activeCatalogCount }} aktif tayang dari {{ $totalCatalogCount }} katalog
-            </p>
+            <div class="mt-3">
+                <p class="text-[28px] font-extrabold text-[#00877A] leading-none tabular-nums">{{ $activeCatalogCount }}</p>
+                <p class="mt-2.5 text-[11.5px] font-medium text-slate-500 flex items-center gap-1.5 tabular-nums">
+                    <svg width="14" height="14" class="w-3.5 h-3.5 text-[#00877A] shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+                    <span>Dari total <strong class="text-slate-700">{{ $totalCatalogCount }}</strong> item di katalog</span>
+                </p>
+            </div>
         </div>
 
-        {{-- KPI 4: Total Pendapatan Tervalidasi --}}
-        <div class="bg-white rounded-lg border border-slate-200/80 p-4 transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md">
+        {{-- KPI 4: Total Pendapatan (Bulan Ini) --}}
+        <div class="bg-white rounded-xl border border-slate-200/80 shadow-[0_1px_2px_rgba(15,23,42,0.03)] p-5 flex flex-col justify-between">
             <div class="flex items-start justify-between gap-2">
-                <div class="min-w-0">
-                    <p class="text-[11.5px] font-semibold text-slate-500">Pendapatan Tervalidasi (Lunas)</p>
-                    <div class="mt-1.5 tabular-nums">
-                        <span class="text-[21px] font-extrabold text-slate-900 leading-none block truncate">
-                            Rp {{ number_format($validatedRevenue, 0, ',', '.') }}
-                        </span>
-                    </div>
-                </div>
-                <div class="w-8 h-8 rounded-lg bg-emerald-50 border border-emerald-200/70 text-emerald-700 flex items-center justify-center shrink-0">
-                    <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></svg>
+                <p class="text-[12.5px] font-semibold text-slate-500 leading-snug">Total Pendapatan (Bulan Ini)</p>
+                <div class="w-9 h-9 rounded-lg bg-slate-100 text-slate-600 flex items-center justify-center shrink-0">
+                    <svg width="18" height="18" class="w-[18px] h-[18px] shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></svg>
                 </div>
             </div>
-            <p class="mt-3 text-[11px] font-semibold text-slate-500 tabular-nums truncate">
-                Tagihan berjalan: <strong class="text-slate-800">Rp {{ number_format($unpaidInvoicedTotal, 0, ',', '.') }}</strong>
-            </p>
+            <div class="mt-3">
+                <p class="text-[22px] font-extrabold text-slate-900 leading-tight tabular-nums truncate">
+                    Rp {{ number_format($validatedRevenue, 0, ',', '.') }}
+                </p>
+                <div class="mt-2 space-y-0.5 text-[11px] font-medium text-slate-500 tabular-nums">
+                    <p class="text-[#00877A] font-bold leading-snug">&uarr; 100% Lunas Tervalidasi BLU</p>
+                    <p class="leading-snug truncate">Total tagihan: <strong class="text-slate-700">Rp {{ number_format($totalInvoicedValue, 0, ',', '.') }}</strong></p>
+                </div>
+            </div>
         </div>
     </div>
 
-    {{-- Grid Utama 2 Kolom (Kiri 8, Kanan 4) --}}
-    <div class="grid grid-cols-1 lg:grid-cols-12 gap-4 items-start">
-        {{-- Panel Kiri: Daftar Pesanan & Aktivitas Terbaru --}}
-        <div class="lg:col-span-8 bg-white rounded-lg border border-slate-200/80 overflow-hidden">
-            <div class="px-4 pt-4 pb-3 border-b border-slate-100 flex items-start justify-between gap-3">
-                <div>
-                    <h2 class="text-[14.5px] font-extrabold text-slate-900">Daftar Pesanan &amp; Aktivitas Operasional Terbaru</h2>
-                    <p class="text-[12px] text-slate-500 mt-0.5">
-                        Akses langsung validasi pesanan kanal B2C dan penerbitan invoice komersial B2B.
-                    </p>
-                </div>
+    {{-- 1 Kartu Tabel Full-Width Persis Mockup 01 --}}
+    <div class="bg-white rounded-xl border border-slate-200/80 shadow-[0_1px_2px_rgba(15,23,42,0.03)] overflow-hidden">
+        {{-- Header Kartu + Filter Pill Kategori + Lihat Semua --}}
+        <div class="px-6 py-5 border-b border-slate-100 flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+            <div>
+                <h2 class="text-[16px] font-extrabold text-slate-900 leading-snug">
+                    Menunggu Tindakan (Validasi Pesanan &amp; Terbitkan Invoice)
+                </h2>
+                <p class="text-[12.5px] text-slate-500 mt-0.5">
+                    Daftar permohonan transaksi B2B dan B2C yang membutuhkan persetujuan dan penerbitan invoice resmi.
+                </p>
+            </div>
+
+            <div class="flex flex-wrap items-center gap-2 text-[12px] tabular-nums">
+                @php
+                    $catPills = [
+                        'semua' => ['Semua', $categoryCounts['semua']],
+                        'BRG' => ['Produk Barang', $categoryCounts['BRG']],
+                        'JSA' => ['Produk Jasa', $categoryCounts['JSA']],
+                        'LAB' => ['Fasilitas/Ruangan', $categoryCounts['LAB']],
+                    ];
+                @endphp
+                @foreach ($catPills as $catKey => [$catLabel, $catCount])
+                    <a href="{{ route('admin.rtpu.dashboard', array_filter(['category' => $catKey !== 'semua' ? $catKey : null, 'q' => $search])) }}"
+                       class="px-3 py-1.5 rounded-lg font-semibold transition-all {{ $activeCategory === $catKey ? 'bg-slate-100 text-slate-900 font-bold' : 'text-slate-500 hover:bg-slate-50 hover:text-slate-800' }}">
+                        {{ $catLabel }} ({{ $catCount }})
+                    </a>
+                @endforeach
+
                 <a href="{{ route('admin.rtpu.antrean') }}"
-                   class="text-[12px] font-bold text-[#003366] hover:text-[#1E3A8A] shrink-0 inline-flex items-center gap-1 transition-colors">
+                   class="ml-1 px-2 py-1.5 text-[#00877A] hover:text-[#006E63] font-bold inline-flex items-center gap-1 transition-colors">
                     <span>Lihat Semua</span>
                     <span>&rarr;</span>
                 </a>
             </div>
-
-            {{-- Filter Tab Cepat --}}
-            <div class="px-4 pt-2.5 border-b border-slate-100 flex items-center gap-5 text-[12px] overflow-x-auto">
-                @php
-                    $tabs = [
-                        'semua' => ['label' => 'Semua', 'count' => $tabCounts['semua']],
-                        'b2c' => ['label' => 'B2C', 'count' => $tabCounts['b2c']],
-                        'b2b' => ['label' => 'B2B', 'count' => $tabCounts['b2b']],
-                        'perlu_validasi' => ['label' => 'Perlu Validasi', 'count' => $tabCounts['perlu_validasi']],
-                    ];
-                @endphp
-                @foreach ($tabs as $key => $info)
-                    <a href="{{ route('admin.rtpu.dashboard', array_filter(['tab' => $key, 'q' => $search])) }}"
-                       class="pb-2.5 font-semibold whitespace-nowrap border-b-2 transition-colors inline-flex items-center gap-1.5 tabular-nums {{ $activeTab === $key ? 'border-[#003366] text-slate-900' : 'border-transparent text-slate-500 hover:text-slate-800' }}">
-                        <span>{{ $info['label'] }}</span>
-                        <span class="px-1.5 py-0.5 rounded text-[10px] font-bold {{ $activeTab === $key ? 'bg-[#EFF6FF] text-[#003366]' : 'bg-slate-100 text-slate-500' }}">
-                            {{ $info['count'] }}
-                        </span>
-                    </a>
-                @endforeach
-            </div>
-
-            {{-- Indikator Hasil Live Search --}}
-            <div id="liveSearchBanner" class="hidden px-4 py-2 bg-slate-50 border-b border-slate-200/70 flex items-center justify-between text-[12px] text-slate-600">
-                <span>Menampilkan <strong id="liveSearchCount" class="text-slate-900 tabular-nums">0</strong> hasil untuk "<strong id="liveSearchQuery" class="text-slate-900"></strong>"</span>
-                <button type="button" onclick="clearGlobalSearch()" class="text-[11.5px] font-semibold text-[#003366] hover:underline">Reset Pencarian</button>
-            </div>
-
-            {{-- Tabel Pesanan Keuangan Presisi --}}
-            <div class="overflow-x-auto">
-                <table class="w-full text-[12px] border-collapse">
-                    <thead>
-                        <tr class="bg-slate-50/80 border-b border-slate-200/80 text-[10.5px] font-bold uppercase tracking-wider text-slate-500">
-                            <th class="px-4 py-2.5 text-left">Kode &amp; Pemesan</th>
-                            <th class="px-3 py-2.5 text-left">Kanal</th>
-                            <th class="px-3 py-2.5 text-left">Layanan &amp; Unit</th>
-                            <th class="px-3 py-2.5 text-right">Nominal (Rp)</th>
-                            <th class="px-3 py-2.5 text-left">Status</th>
-                            <th class="px-4 py-2.5 text-right">Aksi</th>
-                        </tr>
-                    </thead>
-                    <tbody class="divide-y divide-slate-100">
-                        @forelse ($recentOrders as $ord)
-                            @php
-                                $firstItem = $ord->items->first();
-                                $unitName = $firstItem?->product?->unit?->name ?? '-';
-                                $productName = $firstItem?->product?->name ?? 'Item Pesanan';
-                                $extraItems = max(0, $ord->items->count() - 1);
-                                $customerTitle = $ord->segment === 'b2b'
-                                    ? ($ord->user?->company_name ?: ($ord->user?->name ?? '-'))
-                                    : ($ord->user?->name ?? '-');
-                                $customerSub = $ord->segment === 'b2b'
-                                    ? ('PIC: ' . ($ord->user?->name ?? '-'))
-                                    : ($ord->user?->prodi_unit ?: ($ord->user?->email ?? '-'));
-                                $orderTotal = $ord->invoice
-                                    ? (float) $ord->invoice->grand_total
-                                    : round((float) $ord->items->sum('subtotal') * 1.11, 2);
-                                $validateRoute = $ord->segment === 'b2b'
-                                    ? route('admin.rtpu.validasi-b2b', $ord)
-                                    : route('admin.rtpu.validasi-b2c', $ord);
-
-                                $statusBadge = match ($ord->status) {
-                                    'menunggu_verifikasi' => ['Menunggu Verifikasi', 'bg-amber-50 text-amber-700 ring-amber-600/20'],
-                                    'menunggu_pembayaran' => ['Menunggu Pelunasan', 'bg-sky-50 text-sky-700 ring-sky-600/20'],
-                                    'diproses' => ['Diproses Unit', 'bg-indigo-50 text-indigo-700 ring-indigo-600/20'],
-                                    'siap_diambil' => ['Siap Diambil', 'bg-teal-50 text-teal-700 ring-teal-600/20'],
-                                    'selesai' => ['Selesai', 'bg-emerald-50 text-emerald-700 ring-emerald-600/20'],
-                                    'dibatalkan' => ['Dibatalkan', 'bg-rose-50 text-rose-700 ring-rose-600/20'],
-                                    default => [$ord->status, 'bg-slate-100 text-slate-700 ring-slate-600/20'],
-                                };
-
-                                $searchBlob = strtolower(implode(' ', [
-                                    $ord->order_code,
-                                    $customerTitle,
-                                    $customerSub,
-                                    $ord->segment,
-                                    $ord->order_type,
-                                    $productName,
-                                    $unitName,
-                                    $ord->invoice?->invoice_number ?? '',
-                                    $statusBadge[0],
-                                ]));
-                            @endphp
-                            <tr data-searchable="true" data-search-text="{{ $searchBlob }}" class="hover:bg-slate-50/80 transition-colors">
-                                <td class="px-4 py-3 text-left align-top">
-                                    <div class="font-mono font-bold text-[#003366] text-[11.5px] tabular-nums">{{ $ord->order_code }}</div>
-                                    <div class="font-bold text-slate-900 text-[12.5px] mt-0.5 leading-snug">{{ $customerTitle }}</div>
-                                    <div class="text-[11px] text-slate-500 truncate max-w-[200px]">{{ $customerSub }}</div>
-                                </td>
-                                <td class="px-3 py-3 text-left align-top">
-                                    @if ($ord->segment === 'b2b')
-                                        <span class="inline-flex items-center px-2 py-0.5 rounded bg-[#EFF6FF] text-[#003366] ring-1 ring-inset ring-[#1E3A8A]/20 text-[10.5px] font-bold">
-                                            B2B
-                                        </span>
-                                    @else
-                                        <span class="inline-flex items-center px-2 py-0.5 rounded bg-slate-100 text-slate-700 ring-1 ring-inset ring-slate-600/20 text-[10.5px] font-bold">
-                                            B2C
-                                        </span>
-                                    @endif
-                                </td>
-                                <td class="px-3 py-3 text-left align-top">
-                                    <div class="font-semibold text-slate-800 leading-snug">
-                                        {{ $productName }}
-                                        @if ($extraItems > 0)
-                                            <span class="text-[10.5px] text-slate-500 font-medium">(+{{ $extraItems }} item)</span>
-                                        @endif
-                                    </div>
-                                    <div class="text-[11px] text-slate-500 mt-0.5">{{ $unitName }}</div>
-                                </td>
-                                <td class="px-3 py-3 text-right align-top tabular-nums">
-                                    <div class="font-extrabold text-slate-900 whitespace-nowrap">
-                                        {{ number_format($orderTotal, 0, ',', '.') }}
-                                    </div>
-                                    <div class="text-[10.5px] mt-0.5 {{ $ord->invoice?->payment_status === 'paid' ? 'text-emerald-700 font-semibold' : 'text-slate-400' }}">
-                                        {{ $ord->invoice?->payment_status === 'paid' ? 'Lunas 100%' : ($ord->invoice ? 'Belum Lunas' : 'Estimasi') }}
-                                    </div>
-                                </td>
-                                <td class="px-3 py-3 text-left align-top">
-                                    <span class="inline-flex items-center px-2 py-0.5 rounded text-[10.5px] font-bold ring-1 ring-inset whitespace-nowrap {{ $statusBadge[1] }}">
-                                        {{ $statusBadge[0] }}
-                                    </span>
-                                </td>
-                                <td class="px-4 py-3 text-right align-top">
-                                    <a href="{{ $validateRoute }}"
-                                       class="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-white hover:bg-[#003366] border border-slate-200/90 hover:border-[#003366] text-slate-700 hover:text-white text-[11.5px] font-semibold transition-all active:scale-95 whitespace-nowrap">
-                                        <span>Validasi</span>
-                                        <span>&rarr;</span>
-                                    </a>
-                                </td>
-                            </tr>
-                        @empty
-                            <tr>
-                                <td colspan="6" class="px-4 py-10 text-center">
-                                    <p class="text-[13px] font-bold text-slate-800">
-                                        {{ $search !== '' ? 'Tidak ada pesanan yang cocok dengan "' . $search . '"' : 'Belum ada data pesanan pada tab ini' }}
-                                    </p>
-                                    <p class="text-[12px] text-slate-500 mt-1">
-                                        {{ $search !== '' ? 'Gunakan kata kunci kode pesanan, instansi, atau unit lainnya.' : 'Pesanan baru dari portal B2C maupun B2B akan muncul secara otomatis di sini.' }}
-                                    </p>
-                                    @if ($search !== '')
-                                        <button type="button" onclick="clearGlobalSearch()"
-                                                class="mt-3 px-3.5 py-1.5 rounded-lg border border-slate-200 bg-white hover:bg-slate-50 text-[12px] font-semibold text-slate-700 active:scale-95">
-                                            Reset Pencarian
-                                        </button>
-                                    @endif
-                                </td>
-                            </tr>
-                        @endforelse
-                    </tbody>
-                </table>
-            </div>
-
-            {{-- Empty State Live Search --}}
-            <div id="liveSearchEmptyState" class="hidden p-10 text-center border-t border-slate-100">
-                <p class="text-[13.5px] font-bold text-slate-800">Tidak ada hasil untuk "<span id="liveSearchEmptyQuery"></span>"</p>
-                <p class="text-[12px] text-slate-500 mt-1">Tekan Enter untuk mencari di seluruh database, atau reset kata kunci pencarian.</p>
-                <button type="button" onclick="clearGlobalSearch()"
-                        class="mt-3 px-3.5 py-1.5 rounded-lg border border-slate-200 bg-white hover:bg-slate-50 text-[12px] font-semibold text-slate-700 active:scale-95">
-                    Reset Pencarian
-                </button>
-            </div>
-
-            {{-- Footer Pagination --}}
-            <div class="px-4 py-3 border-t border-slate-100 bg-slate-50/50 flex items-center justify-between text-[11.5px] text-slate-500 tabular-nums">
-                <span>Menampilkan {{ $recentOrders->count() }} dari {{ $recentOrders->total() }} pesanan tercatat</span>
-                <div>{{ $recentOrders->links() }}</div>
-            </div>
         </div>
 
-        {{-- Panel Kanan: Komposisi Kanal B2C vs B2B + Kurasi P3M + Kebijakan BLU --}}
-        <div class="lg:col-span-4 space-y-4">
-            {{-- Ringkasan Komposisi Kanal Transaksi --}}
-            <div class="bg-white rounded-lg border border-slate-200/80 p-4 space-y-3.5">
-                <div class="flex items-center justify-between pb-2.5 border-b border-slate-100">
-                    <div>
-                        <h2 class="text-[13.5px] font-extrabold text-slate-900">Komposisi Kanal Transaksi</h2>
-                        <p class="text-[11px] text-slate-500 mt-0.5">Perbandingan volume &amp; nilai tagihan B2C vs B2B</p>
-                    </div>
-                    <span class="px-2 py-0.5 rounded bg-slate-100 text-slate-700 text-[10px] font-bold tabular-nums">
-                        {{ $totalOrders }} Total
-                    </span>
-                </div>
+        {{-- Live Search Banner --}}
+        <div id="liveSearchBanner" class="hidden px-6 py-2.5 bg-slate-50 border-b border-slate-200/70 flex items-center justify-between text-[12px] text-slate-600">
+            <span>Menampilkan <strong id="liveSearchCount" class="text-slate-900 tabular-nums">0</strong> hasil untuk "<strong id="liveSearchQuery" class="text-slate-900"></strong>"</span>
+            <button type="button" onclick="clearGlobalSearch()" class="text-[11.5px] font-semibold text-[#00877A] hover:underline">Reset Pencarian</button>
+        </div>
 
-                {{-- Progress Bar Gabungan --}}
-                <div class="space-y-1.5">
-                    <div class="w-full h-2.5 rounded-full bg-slate-100 overflow-hidden flex">
-                        <div class="bg-slate-600 h-full transition-all" style="width: {{ $b2cShare }}%"></div>
-                        <div class="bg-[#003366] h-full transition-all" style="width: {{ $b2bShare }}%"></div>
-                    </div>
-                    <div class="flex items-center justify-between text-[11px] font-semibold tabular-nums">
-                        <span class="text-slate-600">B2C: {{ $b2cShare }}%</span>
-                        <span class="text-[#003366]">B2B: {{ $b2bShare }}%</span>
-                    </div>
-                </div>
+        {{-- Tabel Full-Width Proporsional 1366px (Sidebar Terbuka Tanpa Terpotong) --}}
+        <div class="overflow-x-auto">
+            <table class="w-full text-[13px] border-collapse">
+                <thead>
+                    <tr class="border-b border-slate-100 text-[10.5px] font-bold uppercase tracking-wider text-slate-400">
+                        <th class="px-4 py-3 text-left whitespace-nowrap">ID PESANAN</th>
+                        <th class="px-3 py-3 text-left">NAMA PEMESAN</th>
+                        <th class="px-3 py-3 text-left">ITEM / LAYANAN</th>
+                        <th class="px-3 py-3 text-left whitespace-nowrap">JADWAL</th>
+                        <th class="px-3 py-3 text-left whitespace-nowrap">STATUS</th>
+                        <th class="px-4 py-3 text-right whitespace-nowrap">AKSI</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-slate-100">
+                    @forelse ($recentOrders as $ord)
+                        @php
+                            $payload = $orderPayloads[$ord->id];
+                            $firstItem = $ord->items->first();
+                            $unitName = $firstItem?->product?->unit?->name ?? '-';
+                            $productName = $firstItem?->product?->name ?? '-';
+                            $customerTitle = $ord->segment === 'b2b'
+                                ? ($ord->user?->company_name ?: ($ord->user?->name ?? '-'))
+                                : ($ord->user?->name ?? '-');
+                            $customerSub = $ord->segment === 'b2b'
+                                ? ('PIC: ' . ($ord->user?->name ?? '-'))
+                                : (($ord->user?->prodi_unit ?? 'Sivitas PNJ') . ($ord->user?->nim_nip ? ' • ' . $ord->user->nim_nip : ''));
+                            $scheduleDate = $ord->booking_date
+                                ? $ord->booking_date->translatedFormat('d M Y')
+                                : optional($ord->created_at)->translatedFormat('d M Y');
+                            $scheduleTime = $ord->booking_slot
+                                ?: (optional($ord->created_at)->format('H:i') . ' WIB');
 
-                <div class="grid grid-cols-1 gap-2.5 tabular-nums">
-                    <a href="{{ route('admin.rtpu.validasi-b2c.index') }}"
-                       class="p-3 rounded-lg bg-slate-50/80 hover:bg-slate-100/80 border border-slate-200/80 transition-colors flex items-center justify-between gap-2">
-                        <div>
-                            <div class="flex items-center gap-1.5">
-                                <span class="w-2 h-2 rounded-full bg-slate-600"></span>
-                                <span class="text-[12px] font-bold text-slate-900">Kanal B2C (Sivitas / Umum)</span>
-                            </div>
-                            <p class="text-[11px] text-slate-500 mt-0.5">{{ $b2cOrdersCount }} pesanan tercatat</p>
-                        </div>
-                        <div class="text-right">
-                            <p class="text-[12.5px] font-extrabold text-slate-900">Rp {{ number_format($b2cRevenue, 0, ',', '.') }}</p>
-                            <p class="text-[10.5px] text-[#003366] font-semibold">Validasi &rarr;</p>
-                        </div>
-                    </a>
+                            $statusPill = match ($ord->status) {
+                                'menunggu_verifikasi' => ['Menunggu Persetujuan', 'bg-amber-50 text-amber-700 border-amber-200', 'bg-amber-500'],
+                                'menunggu_pembayaran' => ['Menunggu Pelunasan', 'bg-amber-50 text-amber-700 border-amber-200', 'bg-amber-500'],
+                                'diproses' => ['Diproses Unit', 'bg-sky-50 text-sky-700 border-sky-200', 'bg-sky-500'],
+                                'siap_diambil' => ['Siap Diambil', 'bg-teal-50 text-[#00877A] border-teal-200', 'bg-[#00877A]'],
+                                'selesai' => ['Selesai / Lunas', 'bg-emerald-50 text-emerald-700 border-emerald-200', 'bg-emerald-500'],
+                                'dibatalkan' => ['Ditolak / Batal', 'bg-rose-50 text-rose-700 border-rose-200', 'bg-rose-500'],
+                                default => [$ord->status, 'bg-slate-100 text-slate-700 border-slate-200', 'bg-slate-400'],
+                            };
 
-                    <a href="{{ route('admin.rtpu.validasi-b2b.index') }}"
-                       class="p-3 rounded-lg bg-[#EFF6FF]/60 hover:bg-[#EFF6FF] border border-[#BFDBFE]/80 transition-colors flex items-center justify-between gap-2">
-                        <div>
-                            <div class="flex items-center gap-1.5">
-                                <span class="w-2 h-2 rounded-full bg-[#003366]"></span>
-                                <span class="text-[12px] font-bold text-slate-900">Kanal B2B (Mitra Industri)</span>
-                            </div>
-                            <p class="text-[11px] text-slate-500 mt-0.5">{{ $b2bOrdersCount }} pesanan tercatat</p>
-                        </div>
-                        <div class="text-right">
-                            <p class="text-[12.5px] font-extrabold text-[#003366]">Rp {{ number_format($b2bRevenue, 0, ',', '.') }}</p>
-                            <p class="text-[10.5px] text-[#003366] font-semibold">Validasi &amp; Invoice &rarr;</p>
-                        </div>
-                    </a>
-                </div>
-            </div>
-
-            {{-- Ringkasan Produk Menunggu Kurasi P3M --}}
-            <div class="bg-white rounded-lg border border-slate-200/80 p-4 space-y-3">
-                <div class="flex items-center justify-between pb-2.5 border-b border-slate-100">
-                    <h2 class="text-[13.5px] font-extrabold text-slate-900">Usulan Produk P3M Masuk</h2>
-                    <span class="px-2 py-0.5 rounded bg-amber-50 text-amber-700 ring-1 ring-inset ring-amber-600/20 text-[10px] font-bold tabular-nums">
-                        {{ $waitingCurationProducts }} Menunggu
-                    </span>
-                </div>
-
-                <div class="space-y-2">
-                    @forelse ($curationPreview as $prod)
-                        <div class="p-2.5 rounded-lg bg-slate-50 border border-slate-200/70">
-                            <div class="flex items-start justify-between gap-2">
-                                <p class="text-[12px] font-bold text-slate-900 leading-snug">{{ $prod->name }}</p>
-                                <span class="font-mono text-[10px] font-bold text-slate-500 shrink-0 tabular-nums">{{ $prod->code }}</span>
-                            </div>
-                            <div class="mt-1 flex items-center justify-between text-[11px] text-slate-500 tabular-nums">
-                                <span>{{ $prod->unit->name ?? '-' }}</span>
-                                <strong class="text-slate-800">Rp {{ number_format((float) $prod->price_b2c, 0, ',', '.') }}</strong>
-                            </div>
-                        </div>
+                            $searchBlob = strtolower(implode(' ', [
+                                $ord->order_code,
+                                $customerTitle,
+                                $customerSub,
+                                $productName,
+                                $unitName,
+                                $ord->segment,
+                                $statusPill[0],
+                                $ord->invoice?->invoice_number ?? '',
+                            ]));
+                        @endphp
+                        <tr data-searchable="true" data-search-text="{{ $searchBlob }}" class="hover:bg-slate-50/70 transition-colors">
+                            <td class="px-4 py-3 align-middle whitespace-nowrap">
+                                <button type="button" onclick='openDetailBerkasModal(@json($payload))'
+                                        class="px-2 py-1 rounded-md bg-slate-100 hover:bg-slate-200/80 text-slate-700 font-mono text-[11px] font-bold tabular-nums transition-colors">
+                                    #{{ $ord->order_code }}
+                                </button>
+                            </td>
+                            <td class="px-3 py-3 align-middle max-w-[180px]">
+                                <p class="font-bold text-slate-900 leading-snug truncate">{{ $customerTitle }}</p>
+                                <p class="text-[11px] text-slate-500 mt-0.5 leading-snug truncate">{{ $customerSub }}</p>
+                            </td>
+                            <td class="px-3 py-3 align-middle max-w-[200px]">
+                                <p class="font-bold text-slate-900 leading-snug truncate">{{ $productName }}</p>
+                                <p class="text-[11px] text-slate-500 mt-0.5 truncate">{{ $unitName }}</p>
+                            </td>
+                            <td class="px-3 py-3 align-middle whitespace-nowrap tabular-nums">
+                                <div class="flex items-start gap-1.5">
+                                    <svg width="13" height="13" class="w-3.5 h-3.5 text-slate-400 mt-0.5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+                                    <div>
+                                        <p class="text-[12px] font-semibold text-slate-800 leading-snug">{{ $scheduleDate }}</p>
+                                        <p class="text-[10.5px] text-slate-400">{{ $scheduleTime }}</p>
+                                    </div>
+                                </div>
+                            </td>
+                            <td class="px-3 py-3 align-middle whitespace-nowrap">
+                                <span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full border text-[11px] font-semibold {{ $statusPill[1] }}">
+                                    <span class="w-1.5 h-1.5 rounded-full {{ $statusPill[2] }}"></span>
+                                    <span>{{ $statusPill[0] }}</span>
+                                </span>
+                            </td>
+                            <td class="px-4 py-3 align-middle text-right whitespace-nowrap">
+                                <div class="inline-flex items-center justify-end gap-1.5">
+                                    @if (! in_array($ord->status, ['selesai', 'dibatalkan'], true))
+                                        <button type="button" onclick='triggerRejectOrder(@json($payload))'
+                                                class="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg border border-rose-200 bg-white hover:bg-rose-50 text-rose-600 text-xs font-semibold whitespace-nowrap transition-all active:scale-[0.98]">
+                                            <span>&times;</span>
+                                            <span>Tolak</span>
+                                        </button>
+                                        <button type="button" onclick='triggerIssueOrApprove(@json($payload))'
+                                                class="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-[#00877A] hover:bg-[#006E63] text-white text-xs font-semibold whitespace-nowrap shadow-sm transition-all active:scale-[0.98]">
+                                            <span>&check;</span>
+                                            <span>{{ $ord->segment === 'b2b' ? 'Terbitkan Invoice' : ($ord->status === 'menunggu_pembayaran' ? 'Konfirmasi Lunas' : 'Terbitkan Invoice') }}</span>
+                                        </button>
+                                    @else
+                                        <button type="button" onclick='openDetailBerkasModal(@json($payload))'
+                                                class="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 text-xs font-semibold whitespace-nowrap transition-all active:scale-[0.98]">
+                                            <span>Detail</span>
+                                        </button>
+                                        @if ($ord->invoice)
+                                            <a href="{{ route('admin.rtpu.print.invoice', $ord) }}" target="_blank" rel="noopener noreferrer"
+                                               class="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-[#00877A] hover:bg-[#006E63] text-white text-xs font-semibold whitespace-nowrap transition-all active:scale-[0.98]">
+                                                <span>Cetak Invoice</span>
+                                            </a>
+                                        @endif
+                                    @endif
+                                </div>
+                            </td>
+                        </tr>
                     @empty
-                        <p class="text-[12px] text-slate-500 text-center py-3">Tidak ada produk menunggu kurasi saat ini.</p>
+                        <tr>
+                            <td colspan="6" class="px-4 py-12 text-center">
+                                <p class="text-[13.5px] font-bold text-slate-800">
+                                    {{ $search !== '' ? 'Tidak ada permohonan yang cocok dengan "' . $search . '"' : 'Belum ada data permohonan pada kategori ini' }}
+                                </p>
+                                @if ($search !== '')
+                                    <button type="button" onclick="clearGlobalSearch()"
+                                            class="mt-3 px-3.5 py-1.5 rounded-lg border border-slate-200 bg-white hover:bg-slate-50 text-[12px] font-semibold text-slate-700">
+                                        Reset Pencarian
+                                    </button>
+                                @endif
+                            </td>
+                        </tr>
                     @endforelse
-                </div>
+                </tbody>
+            </table>
+        </div>
 
-                <button type="button"
-                        onclick="openBatch2Modal('Kurasi Produk P3M', 'Terdapat {{ $waitingCurationProducts }} produk dari Admin P3M yang menunggu kurasi. Halaman proses kurasi & penetapan tarif SK tersedia pada rilis Batch 2.')"
-                        class="w-full py-2 rounded-lg border border-slate-200/90 bg-white hover:bg-slate-50 text-slate-700 text-[11.5px] font-semibold transition-all active:scale-95">
-                    Antrean Kurasi P3M (Batch 2)
-                </button>
-            </div>
+        {{-- Empty State Live Search --}}
+        <div id="liveSearchEmptyState" class="hidden p-10 text-center border-t border-slate-100">
+            <p class="text-[13.5px] font-bold text-slate-800">Tidak ada hasil untuk "<span id="liveSearchEmptyQuery"></span>"</p>
+            <p class="text-[12px] text-slate-500 mt-1">Tekan Enter untuk pencarian penuh di server atau klik reset.</p>
+            <button type="button" onclick="clearGlobalSearch()"
+                    class="mt-3 px-3.5 py-1.5 rounded-lg border border-slate-200 bg-white hover:bg-slate-50 text-[12px] font-semibold text-slate-700">
+                Reset Pencarian
+            </button>
+        </div>
 
-            {{-- Maklumat Tata Kelola Keuangan BLU --}}
-            <div class="bg-white rounded-lg border border-slate-200/80 p-4">
-                <div class="p-3 rounded-lg bg-slate-50 border-l-4 border-[#003366] space-y-1">
-                    <p class="text-[12px] font-bold text-slate-900">Kepatuhan Penerimaan BLU PNJ</p>
-                    <p class="text-[11.5px] text-slate-600 leading-relaxed">
-                        Seluruh tagihan B2C &amp; B2B wajib menggunakan skema pembayaran <strong>100% Lunas</strong> ke rekening resmi BLU PNJ dengan komponen PPN 11% dan PPh 23 sesuai ketentuan perpajakan.
-                    </p>
-                </div>
-            </div>
+        {{-- Footer Tabel Persis Mockup 01 --}}
+        <div class="px-5 py-3.5 border-t border-slate-100 flex flex-col sm:flex-row items-center justify-between gap-3 text-[12px] text-slate-500 tabular-nums">
+            <span>Menampilkan <span class="font-bold text-slate-800">{{ $recentOrders->count() }}</span> dari <span class="font-bold text-slate-800">{{ $recentOrders->total() }}</span> permohonan aktif</span>
+            <div>{{ $recentOrders->links() }}</div>
         </div>
     </div>
 </div>
