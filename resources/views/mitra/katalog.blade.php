@@ -267,18 +267,30 @@
                             {{ $product->description }}
                         </p>
 
-                        {{-- Price B2B --}}
+                        {{-- Price B2B (Dinamis mengikuti show_price) --}}
                         <div class="mt-3.5 border-t border-slate-100 pt-3">
-                            <div class="flex items-baseline justify-between gap-2">
-                                <span class="text-[10px] font-semibold tracking-wider text-slate-400 uppercase">Tarif B2B</span>
-                                <span class="text-[10px] font-semibold text-[#00897b]">100% Lunas</span>
-                            </div>
-                            <div class="mt-0.5 flex items-baseline gap-1">
-                                <span class="tabular-nums text-lg font-extrabold tracking-tight text-slate-900">
-                                    Rp {{ number_format($product->price_b2b, 0, ',', '.') }}
-                                </span>
-                                <span class="text-[11px] text-slate-400">/ {{ $meta['satuan'] }}</span>
-                            </div>
+                            @if ($product->show_price ?? true)
+                                <div class="flex items-baseline justify-between gap-2">
+                                    <span class="text-[10px] font-semibold tracking-wider text-slate-400 uppercase">Tarif B2B</span>
+                                    <span class="text-[10px] font-semibold text-[#00877A]">100% Lunas</span>
+                                </div>
+                                <div class="mt-0.5 flex items-baseline gap-1">
+                                    <span class="tabular-nums text-lg font-extrabold tracking-tight text-slate-900">
+                                        Rp {{ number_format($product->price_b2b, 0, ',', '.') }}
+                                    </span>
+                                    <span class="text-[11px] text-slate-400">/ {{ $meta['satuan'] }}</span>
+                                </div>
+                            @else
+                                <div class="flex items-center justify-between gap-2">
+                                    <span class="text-[10px] font-semibold tracking-wider text-slate-400 uppercase">Tarif B2B</span>
+                                    <span class="inline-flex items-center rounded-full border border-teal-200 bg-[#E6F4F2] px-2 py-0.5 text-[10px] font-semibold text-[#00877A]">
+                                        Ajukan Penawaran
+                                    </span>
+                                </div>
+                                <p class="mt-1 text-xs font-semibold text-slate-700">
+                                    Harga disesuaikan saat penerbitan Invoice
+                                </p>
+                            @endif
                         </div>
 
                         {{-- Specs Box --}}
@@ -356,7 +368,7 @@
         <div class="flex flex-wrap items-center justify-between gap-3">
             <div class="flex items-center gap-3">
                 <span class="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-white border border-teal-200 text-[#00897b]">
-                    <svg class="h-4.5 w-4.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <svg width="18" height="18" class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
                         <path d="m9 12 2 2 4-4"/>
                     </svg>

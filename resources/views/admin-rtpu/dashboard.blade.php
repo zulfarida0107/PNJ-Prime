@@ -145,17 +145,17 @@
             <button type="button" onclick="clearGlobalSearch()" class="text-[11.5px] font-semibold text-[#00877A] hover:underline">Reset Pencarian</button>
         </div>
 
-        {{-- Tabel Full-Width Proporsional 1366px (Sidebar Terbuka Tanpa Terpotong) --}}
-        <div class="overflow-x-auto">
-            <table class="w-full text-[13px] border-collapse">
+        {{-- Tabel Full-Width Proporsional 1366px (Sidebar Terbuka Tanpa Slider Horizontal) --}}
+        <div class="overflow-x-auto lg:overflow-x-visible">
+            <table class="w-full lg:table-fixed text-xs border-collapse">
                 <thead>
                     <tr class="border-b border-slate-100 text-[10.5px] font-bold uppercase tracking-wider text-slate-400">
-                        <th class="px-4 py-3 text-left whitespace-nowrap">ID PESANAN</th>
-                        <th class="px-3 py-3 text-left">NAMA PEMESAN</th>
-                        <th class="px-3 py-3 text-left">ITEM / LAYANAN</th>
-                        <th class="px-3 py-3 text-left whitespace-nowrap">JADWAL</th>
-                        <th class="px-3 py-3 text-left whitespace-nowrap">STATUS</th>
-                        <th class="px-4 py-3 text-right whitespace-nowrap">AKSI</th>
+                        <th class="lg:w-[14%] px-2.5 py-2.5 text-left">ID PESANAN</th>
+                        <th class="lg:w-[19%] px-2.5 py-2.5 text-left">NAMA PEMESAN</th>
+                        <th class="lg:w-[21%] px-2.5 py-2.5 text-left">ITEM / LAYANAN</th>
+                        <th class="lg:w-[13%] px-2.5 py-2.5 text-left">JADWAL</th>
+                        <th class="lg:w-[15%] px-2.5 py-2.5 text-left">STATUS</th>
+                        <th class="lg:w-[18%] px-2.5 py-2.5 text-right">AKSI</th>
                     </tr>
                 </thead>
                 <tbody class="divide-y divide-slate-100">
@@ -199,56 +199,56 @@
                             ]));
                         @endphp
                         <tr data-searchable="true" data-search-text="{{ $searchBlob }}" class="hover:bg-slate-50/70 transition-colors">
-                            <td class="px-4 py-3 align-middle whitespace-nowrap">
+                            <td class="px-2.5 py-2.5 align-middle">
                                 <button type="button" onclick='openDetailBerkasModal(@json($payload))'
-                                        class="px-2 py-1 rounded-md bg-slate-100 hover:bg-slate-200/80 text-slate-700 font-mono text-[11px] font-bold tabular-nums transition-colors">
+                                        class="inline-block max-w-full break-all text-left px-2 py-1 rounded-md bg-slate-100 hover:bg-slate-200/80 text-slate-700 font-mono text-[10.5px] font-bold tabular-nums transition-colors">
                                     #{{ $ord->order_code }}
                                 </button>
                             </td>
-                            <td class="px-3 py-3 align-middle max-w-[180px]">
-                                <p class="font-bold text-slate-900 leading-snug truncate">{{ $customerTitle }}</p>
-                                <p class="text-[11px] text-slate-500 mt-0.5 leading-snug truncate">{{ $customerSub }}</p>
+                            <td class="px-2.5 py-2.5 align-middle">
+                                <p class="font-bold text-slate-900 break-words leading-snug line-clamp-2">{{ $customerTitle }}</p>
+                                <p class="text-[11px] text-slate-500 mt-0.5 break-words leading-snug line-clamp-2">{{ $customerSub }}</p>
                             </td>
-                            <td class="px-3 py-3 align-middle max-w-[200px]">
-                                <p class="font-bold text-slate-900 leading-snug truncate">{{ $productName }}</p>
-                                <p class="text-[11px] text-slate-500 mt-0.5 truncate">{{ $unitName }}</p>
+                            <td class="px-2.5 py-2.5 align-middle">
+                                <p class="font-bold text-slate-900 break-words leading-snug line-clamp-2">{{ $productName }}</p>
+                                <p class="text-[11px] text-slate-500 mt-0.5 break-words leading-snug line-clamp-2">{{ $unitName }}</p>
                             </td>
-                            <td class="px-3 py-3 align-middle whitespace-nowrap tabular-nums">
+                            <td class="px-2.5 py-2.5 align-middle tabular-nums">
                                 <div class="flex items-start gap-1.5">
                                     <svg width="13" height="13" class="w-3.5 h-3.5 text-slate-400 mt-0.5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
-                                    <div>
-                                        <p class="text-[12px] font-semibold text-slate-800 leading-snug">{{ $scheduleDate }}</p>
-                                        <p class="text-[10.5px] text-slate-400">{{ $scheduleTime }}</p>
+                                    <div class="min-w-0">
+                                        <p class="text-[11.5px] font-semibold text-slate-800 leading-snug">{{ $scheduleDate }}</p>
+                                        <p class="text-[10.5px] text-slate-400 break-words leading-snug">{{ $scheduleTime }}</p>
                                     </div>
                                 </div>
                             </td>
-                            <td class="px-3 py-3 align-middle whitespace-nowrap">
-                                <span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full border text-[11px] font-semibold {{ $statusPill[1] }}">
-                                    <span class="w-1.5 h-1.5 rounded-full {{ $statusPill[2] }}"></span>
-                                    <span>{{ $statusPill[0] }}</span>
+                            <td class="px-2.5 py-2.5 align-middle">
+                                <span class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full border text-[10.5px] font-semibold leading-tight {{ $statusPill[1] }}">
+                                    <span class="w-1.5 h-1.5 shrink-0 rounded-full {{ $statusPill[2] }}"></span>
+                                    <span class="break-words">{{ $statusPill[0] }}</span>
                                 </span>
                             </td>
-                            <td class="px-4 py-3 align-middle text-right whitespace-nowrap">
-                                <div class="inline-flex items-center justify-end gap-1.5">
+                            <td class="px-2.5 py-2.5 align-middle text-right">
+                                <div class="flex flex-wrap items-center justify-end gap-1">
                                     @if (! in_array($ord->status, ['selesai', 'dibatalkan'], true))
                                         <button type="button" onclick='triggerRejectOrder(@json($payload))'
-                                                class="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg border border-rose-200 bg-white hover:bg-rose-50 text-rose-600 text-xs font-semibold whitespace-nowrap transition-all active:scale-[0.98]">
+                                                class="inline-flex items-center gap-1 px-2 py-1 rounded-lg border border-rose-200 bg-white hover:bg-rose-50 text-rose-600 text-[11px] font-semibold transition-all active:scale-[0.98]">
                                             <span>&times;</span>
                                             <span>Tolak</span>
                                         </button>
                                         <button type="button" onclick='triggerIssueOrApprove(@json($payload))'
-                                                class="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-[#00877A] hover:bg-[#006E63] text-white text-xs font-semibold whitespace-nowrap shadow-sm transition-all active:scale-[0.98]">
+                                                class="inline-flex items-center gap-1 px-2 py-1 rounded-lg bg-[#00877A] hover:bg-[#006E63] text-white text-[11px] font-semibold shadow-sm transition-all active:scale-[0.98]">
                                             <span>&check;</span>
                                             <span>{{ $ord->segment === 'b2b' ? 'Terbitkan Invoice' : ($ord->status === 'menunggu_pembayaran' ? 'Konfirmasi Lunas' : 'Terbitkan Invoice') }}</span>
                                         </button>
                                     @else
                                         <button type="button" onclick='openDetailBerkasModal(@json($payload))'
-                                                class="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 text-xs font-semibold whitespace-nowrap transition-all active:scale-[0.98]">
+                                                class="inline-flex items-center gap-1 px-2 py-1 rounded-lg border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 text-[11px] font-semibold transition-all active:scale-[0.98]">
                                             <span>Detail</span>
                                         </button>
                                         @if ($ord->invoice)
                                             <a href="{{ route('admin.rtpu.print.invoice', $ord) }}" target="_blank" rel="noopener noreferrer"
-                                               class="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-[#00877A] hover:bg-[#006E63] text-white text-xs font-semibold whitespace-nowrap transition-all active:scale-[0.98]">
+                                               class="inline-flex items-center gap-1 px-2 py-1 rounded-lg bg-[#00877A] hover:bg-[#006E63] text-white text-[11px] font-semibold transition-all active:scale-[0.98]">
                                                 <span>Cetak Invoice</span>
                                             </a>
                                         @endif

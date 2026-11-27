@@ -20,6 +20,7 @@ class Product extends Model
         'hpp',
         'price_b2c',
         'price_b2b',
+        'show_price',
         'stock',
         'image_path',
         'status',
@@ -32,6 +33,7 @@ class Product extends Model
             'hpp' => 'decimal:2',
             'price_b2c' => 'decimal:2',
             'price_b2b' => 'decimal:2',
+            'show_price' => 'boolean',
             'stock' => 'integer',
         ];
     }

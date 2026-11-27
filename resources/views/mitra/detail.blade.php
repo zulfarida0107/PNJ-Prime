@@ -226,15 +226,26 @@
             <section class="sticky top-20 rounded-lg border border-slate-200/80 bg-white p-5 space-y-4">
                 <div class="flex items-start justify-between gap-2 border-b border-slate-100 pb-3.5">
                     <div>
-                        <p class="text-[11px] font-semibold tracking-wider text-[#00897b] uppercase">Tarif Komersial B2B</p>
-                        <div class="mt-1 flex items-baseline gap-1.5">
-                            <span class="tabular-nums text-2xl font-extrabold tracking-tight text-slate-900">
-                                Rp {{ number_format($product->price_b2b, 0, ',', '.') }}
-                            </span>
-                            <span class="text-xs text-slate-400">/ {{ $meta['satuan'] }}</span>
-                        </div>
+                        <p class="text-[11px] font-semibold tracking-wider text-[#00877A] uppercase">Tarif Komersial B2B</p>
+                        @if ($product->show_price ?? true)
+                            <div class="mt-1 flex items-baseline gap-1.5">
+                                <span class="tabular-nums text-2xl font-extrabold tracking-tight text-slate-900">
+                                    Rp {{ number_format($product->price_b2b, 0, ',', '.') }}
+                                </span>
+                                <span class="text-xs text-slate-400">/ {{ $meta['satuan'] }}</span>
+                            </div>
+                        @else
+                            <div class="mt-1.5">
+                                <span class="inline-flex items-center rounded-md border border-teal-200 bg-[#E6F4F2] px-2.5 py-1 text-xs font-bold text-[#00877A]">
+                                    Ajukan Penawaran
+                                </span>
+                                <p class="mt-1 text-xs font-medium text-slate-600">
+                                    Harga disesuaikan saat penerbitan Invoice
+                                </p>
+                            </div>
+                        @endif
                     </div>
-                    <span class="rounded-full border border-emerald-200 bg-emerald-50 px-2.5 py-1 text-[11px] font-bold text-emerald-700">
+                    <span class="rounded-full border border-emerald-200 bg-emerald-50 px-2.5 py-1 text-[11px] font-bold text-emerald-700 shrink-0">
                         100% Lunas
                     </span>
                 </div>
@@ -263,38 +274,47 @@
                         </div>
                     </div>
 
-                    <div class="rounded-lg border border-slate-200/80 bg-slate-50/70 p-3.5 space-y-2 text-xs">
-                        <div class="flex items-center justify-between text-slate-600">
-                            <span>Subtotal / DPP (<span id="calc-qty-label" class="tabular-nums font-semibold">1</span> {{ $meta['satuan'] }})</span>
-                            <span id="calc-dpp" class="tabular-nums font-semibold text-slate-900">
-                                Rp {{ number_format($taxBreakdown['dpp'], 0, ',', '.') }}
-                            </span>
+                    @if ($product->show_price ?? true)
+                        <div class="rounded-lg border border-slate-200/80 bg-slate-50/70 p-3.5 space-y-2 text-xs">
+                            <div class="flex items-center justify-between text-slate-600">
+                                <span>Subtotal / DPP (<span id="calc-qty-label" class="tabular-nums font-semibold">1</span> {{ $meta['satuan'] }})</span>
+                                <span id="calc-dpp" class="tabular-nums font-semibold text-slate-900">
+                                    Rp {{ number_format($taxBreakdown['dpp'], 0, ',', '.') }}
+                                </span>
+                            </div>
+                            <div class="flex items-center justify-between text-slate-600">
+                                <span>PPN 11%</span>
+                                <span id="calc-ppn" class="tabular-nums font-semibold text-slate-800">
+                                    + Rp {{ number_format($taxBreakdown['ppn_amount'], 0, ',', '.') }}
+                                </span>
+                            </div>
+                            <div class="flex items-center justify-between text-slate-600">
+                                <span>PPh 23 (2% {{ $isServiceOrLab ? 'Jasa/Lab' : 'N/A' }})</span>
+                                <span id="calc-pph23" class="tabular-nums font-semibold {{ $isServiceOrLab ? 'text-sky-700' : 'text-slate-400' }}">
+                                    {{ $isServiceOrLab ? '− Rp ' . number_format($taxBreakdown['pph23_amount'], 0, ',', '.') : 'Rp 0' }}
+                                </span>
+                            </div>
+                            <div class="flex items-center justify-between text-slate-600">
+                                <span>e-Meterai Dokumen</span>
+                                <span class="tabular-nums font-semibold text-slate-800">
+                                    + Rp {{ number_format($taxBreakdown['emeterai_amount'], 0, ',', '.') }}
+                                </span>
+                            </div>
+                            <div class="flex items-center justify-between border-t border-slate-200 pt-2">
+                                <span class="font-bold text-slate-900">Estimasi Total (100% Lunas)</span>
+                                <span id="calc-grand-total" class="tabular-nums text-base font-extrabold text-[#00877A]">
+                                    Rp {{ number_format($taxBreakdown['grand_total'], 0, ',', '.') }}
+                                </span>
+                            </div>
                         </div>
-                        <div class="flex items-center justify-between text-slate-600">
-                            <span>PPN 11%</span>
-                            <span id="calc-ppn" class="tabular-nums font-semibold text-slate-800">
-                                + Rp {{ number_format($taxBreakdown['ppn_amount'], 0, ',', '.') }}
-                            </span>
+                    @else
+                        <div class="rounded-lg border border-teal-200/80 bg-[#E6F4F2]/60 p-3.5 text-xs text-slate-700 space-y-1.5">
+                            <p class="font-bold text-[#00877A]">Penetapan Harga Berbasis Penawaran &amp; Invoice</p>
+                            <p class="text-[11px] leading-relaxed text-slate-600">
+                                Nominal harga untuk <span id="calc-qty-label" class="tabular-nums font-semibold text-slate-800">1</span> {{ $meta['satuan'] }}, termasuk perhitungan DPP, PPN 11%, {{ $isServiceOrLab ? 'PPh 23 (2%), ' : '' }}dan e-Meterai akan diinformasikan secara resmi saat Admin RTPU menerbitkan Invoice.
+                            </p>
                         </div>
-                        <div class="flex items-center justify-between text-slate-600">
-                            <span>PPh 23 (2% {{ $isServiceOrLab ? 'Jasa/Lab' : 'N/A' }})</span>
-                            <span id="calc-pph23" class="tabular-nums font-semibold {{ $isServiceOrLab ? 'text-sky-700' : 'text-slate-400' }}">
-                                {{ $isServiceOrLab ? '− Rp ' . number_format($taxBreakdown['pph23_amount'], 0, ',', '.') : 'Rp 0' }}
-                            </span>
-                        </div>
-                        <div class="flex items-center justify-between text-slate-600">
-                            <span>e-Meterai Dokumen</span>
-                            <span class="tabular-nums font-semibold text-slate-800">
-                                + Rp {{ number_format($taxBreakdown['emeterai_amount'], 0, ',', '.') }}
-                            </span>
-                        </div>
-                        <div class="flex items-center justify-between border-t border-slate-200 pt-2">
-                            <span class="font-bold text-slate-900">Estimasi Total (100% Lunas)</span>
-                            <span id="calc-grand-total" class="tabular-nums text-base font-extrabold text-[#00897b]">
-                                Rp {{ number_format($taxBreakdown['grand_total'], 0, ',', '.') }}
-                            </span>
-                        </div>
-                    </div>
+                    @endif
                 </div>
 
                 {{-- Primary CTA Button by Order Type --}}
@@ -338,10 +358,16 @@
                             </h3>
                         </div>
                         <div class="mt-3 flex items-center justify-between border-t border-slate-100 pt-2.5">
-                            <span class="tabular-nums text-sm font-extrabold text-slate-900">
-                                Rp {{ number_format($rel->price_b2b, 0, ',', '.') }}
-                            </span>
-                            <span class="text-[11px] font-semibold text-[#00897b]">Detail &rarr;</span>
+                            @if ($rel->show_price ?? true)
+                                <span class="tabular-nums text-sm font-extrabold text-slate-900">
+                                    Rp {{ number_format($rel->price_b2b, 0, ',', '.') }}
+                                </span>
+                            @else
+                                <span class="text-xs font-semibold text-[#00877A]">
+                                    Ajukan Penawaran
+                                </span>
+                            @endif
+                            <span class="text-[11px] font-semibold text-[#00877A]">Detail &rarr;</span>
                         </div>
                     </a>
                 @endforeach
@@ -383,10 +409,16 @@
                     </span>
                 </div>
                 <div class="mt-1 flex items-center justify-between">
-                    <span class="text-slate-600">Estimasi Tagihan (incl. Pajak &amp; e-Meterai)</span>
-                    <span id="modal-total-label" class="tabular-nums font-extrabold text-[#00897b]">
-                        Rp {{ number_format($taxBreakdown['grand_total'], 0, ',', '.') }}
-                    </span>
+                    <span class="text-slate-600">Estimasi Tagihan</span>
+                    @if ($product->show_price ?? true)
+                        <span id="modal-total-label" class="tabular-nums font-extrabold text-[#00877A]">
+                            Rp {{ number_format($taxBreakdown['grand_total'], 0, ',', '.') }}
+                        </span>
+                    @else
+                        <span class="font-semibold text-[#00877A]">
+                            Disesuaikan saat Invoice
+                        </span>
+                    @endif
                 </div>
             </div>
 

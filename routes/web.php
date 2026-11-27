@@ -1,11 +1,20 @@
 <?php
 
 use App\Http\Controllers\AuthController;
+use App\Http\Controllers\PublicCatalogController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () {
     return view('welcome');
-});
+})->name('home');
+
+/*
+|--------------------------------------------------------------------------
+| Katalog Riset Publik (Tanpa Login)
+|--------------------------------------------------------------------------
+*/
+Route::get('/katalog', [PublicCatalogController::class, 'index'])->name('public.katalog');
+Route::get('/katalog/{product}', [PublicCatalogController::class, 'show'])->name('public.katalog.detail');
 
 /*
 |--------------------------------------------------------------------------
