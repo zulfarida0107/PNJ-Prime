@@ -180,7 +180,8 @@
             @foreach ($products as $product)
                 @php
                     $meta = $orderTypeConfig[$product->order_type] ?? $orderTypeConfig['ready_stock'];
-                    $imageExists = $product->image_path && file_exists(public_path('storage/' . $product->image_path));
+                    $imageUrl = $product->resolved_image_url;
+                    $imageExists = $imageUrl !== null;
                     $searchIndex = strtolower(implode(' ', array_filter([
                         $product->name,
                         $product->code,
@@ -198,7 +199,7 @@
                     {{-- Visual / Thumbnail Header --}}
                     <div class="relative h-40 w-full overflow-hidden border-b border-slate-100 bg-slate-900">
                         @if ($imageExists)
-                            <img src="{{ asset('storage/' . $product->image_path) }}"
+                            <img src="{{ $imageUrl }}"
                                  alt="{{ $product->name }}"
                                  class="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105">
                         @else

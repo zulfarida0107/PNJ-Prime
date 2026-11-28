@@ -6,7 +6,8 @@
 @php
     $authUser = auth()->user();
     $isMitra = $authUser && $authUser->role === 'mitra';
-    $imageExists = $product->image_path && file_exists(public_path('storage/' . $product->image_path));
+    $imageUrl = $product->resolved_image_url;
+    $imageExists = $imageUrl !== null;
     $displayPrice = (float) ($product->price_b2b > 0 ? $product->price_b2b : $product->price_b2c);
     $showPrice = (bool) ($product->show_price ?? true);
 @endphp
@@ -40,12 +41,13 @@
     <div class="grid grid-cols-1 gap-6 lg:grid-cols-12">
         {{-- Left Column (7/12): Visual, Deskripsi & Spesifikasi --}}
         <div class="space-y-5 lg:col-span-7">
-            <section class="overflow-hidden rounded-xl border border-slate-200 bg-white">
-                <div class="relative h-60 w-full border-b border-slate-100 bg-[#0F172A]">
+            <section class="overflow-hidden rounded-lg border border-slate-200/80 bg-white">
+                <div class="relative h-64 sm:h-72 w-full overflow-hidden border-b border-slate-100 bg-[#0F172A]">
                     @if ($imageExists)
-                        <img src="{{ asset('storage/' . $product->image_path) }}"
+                        <img src="{{ $imageUrl }}"
                              alt="{{ $product->name }}"
-                             class="h-full w-full object-cover">
+                             loading="eager"
+                             class="h-full w-full object-cover object-center">
                     @else
                         <div class="tech-grid-bg flex h-full w-full flex-col justify-between p-6 text-white">
                             <div class="flex flex-wrap items-center justify-between gap-2">

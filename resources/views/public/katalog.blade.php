@@ -1,40 +1,65 @@
 @extends('public.layouts.catalog')
 
-@section('title', 'Katalog Riset & Inovasi')
-@section('public_nav', ($filters['order_type'] ?? '') === 'lab_reservation' ? 'lab' : 'katalog')
-
 @php
+    $isLabView = (bool) ($isLabMode ?? (($filters['order_type'] ?? '') === 'lab_reservation'));
     $authUser = auth()->user();
     $isMitra = $authUser && $authUser->role === 'mitra';
     $hasActiveFilter = ! empty($filters['category_id'])
         || ! empty($filters['trl'])
-        || ! empty($filters['order_type'])
+        || (! $isLabView && ! empty($filters['order_type']))
         || ! empty($filters['q']);
+    $resetFilterUrl = $isLabView
+        ? route('public.katalog', ['order_type' => 'lab_reservation'])
+        : route('public.katalog');
 @endphp
 
+@section('title', $isLabView ? 'Sewa Fasilitas Laboratorium' : 'Katalog Riset & Inovasi')
+@section('public_nav', $isLabView ? 'lab' : 'katalog')
+
 @section('content')
-<div class="space-y-6">
+<div class="space-y-6 print:block print:space-y-3 print:h-auto print:min-h-0 print:overflow-visible print:p-0 print:m-0 print:bg-white">
+    {{-- Print-Only Official Brochure Header (Unduh Brosur PDF) --}}
+    <div class="hidden print:flex items-center justify-between border-b-2 border-[#00877A] pb-2.5 mb-3">
+        <div>
+            <p class="text-[10px] font-bold uppercase tracking-wider text-[#00877A]">PNJ Prime &bull; UPA-RTPU Politeknik Negeri Jakarta</p>
+            <h2 class="text-base font-extrabold text-[#0F172A]">
+                {{ $isLabView ? 'Brosur Tarif Sewa Fasilitas Laboratorium — PNJ Prime' : 'Brosur Katalog Inovasi Riset — PNJ Prime' }}
+            </h2>
+            <p class="text-[10px] text-slate-500">Kampus Baru UI, Jl. Prof. Dr. G.A. Siwabessy, Depok &bull; rtpu@pnj.ac.id</p>
+        </div>
+        <div class="text-right text-[10px] text-slate-600 tabular-nums">
+            <p class="font-bold text-[#0F172A]">
+                Total {{ $isLabView ? 'Fasilitas Lab' : 'Produk Riset' }}: {{ $products->count() }}
+            </p>
+            <p>Tarif Resmi BLU &bull; 100% Lunas</p>
+        </div>
+    </div>
+
     {{-- ===================================================================== --}}
-    {{-- BREADCRUMB & PAGE HEADER (PERSIS MOCKUP)                              --}}
+    {{-- BREADCRUMB & PAGE HEADER (WEB ONLY — HIDDEN SAAT PRINT)               --}}
     {{-- ===================================================================== --}}
-    <div class="flex flex-wrap items-start justify-between gap-4">
+    <div class="no-print print:hidden flex flex-wrap items-start justify-between gap-4">
         <div>
             <nav class="mb-1.5 flex items-center gap-1.5 text-[11px] font-semibold tracking-wider uppercase text-slate-400" aria-label="Breadcrumb">
                 <a href="{{ url('/') }}" class="hover:text-[#00877A] transition-colors">BERANDA</a>
                 <svg width="12" height="12" class="h-3 w-3 text-slate-300" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
                     <path d="m9 18 6-6-6-6"></path>
                 </svg>
-                <span class="text-[#00877A]">KATALOG RISET &amp; INOVASI</span>
+                <span class="text-[#00877A]">{{ $isLabView ? 'SEWA FASILITAS LAB' : 'KATALOG RISET & INOVASI' }}</span>
             </nav>
-            <h1 class="text-2xl font-extrabold tracking-tight text-[#0F172A]">Katalog Riset &amp; Inovasi</h1>
+            <h1 class="text-2xl font-extrabold tracking-tight text-[#0F172A]">
+                {{ $isLabView ? 'Sewa Fasilitas Laboratorium' : 'Katalog Riset & Inovasi' }}
+            </h1>
             <p class="mt-1 text-xs sm:text-sm text-slate-500">
-                Eksplorasi hasil riset terapan unggulan Politeknik Negeri Jakarta siap hilirisasi dan kolaborasi industri.
+                {{ $isLabView
+                    ? 'Reservasi laboratorium, studio, dan workshop tersertifikasi Politeknik Negeri Jakarta dengan tarif resmi BLU per jam.'
+                    : 'Eksplorasi hasil riset terapan unggulan Politeknik Negeri Jakarta siap hilirisasi dan kolaborasi industri.' }}
             </p>
         </div>
 
         <button type="button"
                 onclick="window.print()"
-                class="no-print inline-flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-4 py-2 text-xs font-semibold text-[#00877A] hover:border-[#00877A]/40 hover:bg-[#E6F4F2]/50 transition-colors">
+                class="no-print print:hidden inline-flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-4 py-2 text-xs font-semibold text-[#00877A] hover:border-[#00877A]/40 hover:bg-[#E6F4F2]/50 transition-colors">
             <svg width="15" height="15" class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
                 <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
                 <polyline points="7 10 12 15 17 10"></polyline>
@@ -45,11 +70,15 @@
     </div>
 
     {{-- ===================================================================== --}}
-    {{-- FILTER CARD 4 KOLOM (PERSIS MOCKUP)                                   --}}
+    {{-- FILTER CARD (4 KOLOM RISET / 3 KOLOM SEWA LAB)                        --}}
     {{-- ===================================================================== --}}
-    <section class="no-print rounded-xl border border-slate-200 bg-white p-4 sm:p-5">
+    <section class="no-print print:hidden rounded-lg border border-slate-200/80 bg-white p-4 sm:p-5">
         <form id="public-catalog-filter-form" method="GET" action="{{ route('public.katalog') }}" class="space-y-4">
-            <div class="grid grid-cols-1 gap-3.5 sm:grid-cols-2 lg:grid-cols-4">
+            @if ($isLabView)
+                <input type="hidden" name="order_type" value="lab_reservation">
+            @endif
+
+            <div class="grid grid-cols-1 gap-3.5 sm:grid-cols-2 {{ $isLabView ? 'lg:grid-cols-3' : 'lg:grid-cols-4' }}">
                 {{-- Kolom 1: Kategori --}}
                 <div>
                     <label for="public_category_id" class="mb-1.5 block text-[11px] font-semibold text-slate-600">
@@ -80,21 +109,22 @@
                     </select>
                 </div>
 
-                {{-- Kolom 3: Kategori Pesanan --}}
-                <div>
-                    <label for="public_order_type" class="mb-1.5 block text-[11px] font-semibold text-slate-600">
-                        Kategori Pesanan
-                    </label>
-                    <select id="public_order_type" name="order_type" data-auto-submit
-                            class="h-10 w-full rounded-lg border border-slate-200 bg-white px-3 text-xs font-medium text-[#0F172A] outline-none transition focus:border-[#00877A] focus:ring-2 focus:ring-[#00877A]/15">
-                        <option value="">Semua Tipe Pesanan</option>
-                        <option value="ready_stock" @selected(($filters['order_type'] ?? '') === 'ready_stock')>Ready Stock</option>
-                        <option value="pre_order" @selected(($filters['order_type'] ?? '') === 'pre_order')>Pre-Order</option>
-                        <option value="lab_reservation" @selected(($filters['order_type'] ?? '') === 'lab_reservation')>Reservasi Lab</option>
-                    </select>
-                </div>
+                {{-- Kolom 3: Kategori Pesanan (Khusus Mode Katalog Riset — Tanpa Opsi Reservasi Lab) --}}
+                @if (! $isLabView)
+                    <div>
+                        <label for="public_order_type" class="mb-1.5 block text-[11px] font-semibold text-slate-600">
+                            Kategori Pesanan
+                        </label>
+                        <select id="public_order_type" name="order_type" data-auto-submit
+                                class="h-10 w-full rounded-lg border border-slate-200 bg-white px-3 text-xs font-medium text-[#0F172A] outline-none transition focus:border-[#00877A] focus:ring-2 focus:ring-[#00877A]/15">
+                            <option value="">Semua Tipe</option>
+                            <option value="ready_stock" @selected(($filters['order_type'] ?? '') === 'ready_stock')>Ready Stock</option>
+                            <option value="pre_order" @selected(($filters['order_type'] ?? '') === 'pre_order')>Pre-Order</option>
+                        </select>
+                    </div>
+                @endif
 
-                {{-- Kolom 4: Pencarian Cepat --}}
+                {{-- Kolom Terakhir: Pencarian Cepat --}}
                 <div>
                     <label for="public-filter-q" class="mb-1.5 block text-[11px] font-semibold text-slate-600">
                         Pencarian Cepat
@@ -110,7 +140,7 @@
                                id="public-filter-q"
                                name="q"
                                value="{{ $filters['q'] ?? '' }}"
-                               placeholder="Cari inovasi, unit, atau kode..."
+                               placeholder="{{ $isLabView ? 'Cari laboratorium, studio, unit, atau kode...' : 'Cari inovasi, unit, atau kode...' }}"
                                class="h-10 w-full rounded-lg border border-slate-200 bg-white pr-3 pl-9 text-xs font-medium text-[#0F172A] outline-none transition placeholder:text-slate-400 focus:border-[#00877A] focus:ring-2 focus:ring-[#00877A]/15">
                     </div>
                 </div>
@@ -121,13 +151,14 @@
                 <div class="flex items-center gap-2 text-slate-500">
                     <span class="h-2 w-2 rounded-full bg-[#00877A]"></span>
                     <span>
-                        Menampilkan <strong id="public-result-count" class="tabular-nums text-[#0F172A]">{{ $products->count() }}</strong> hasil riset unggulan
+                        Menampilkan <strong id="public-result-count" class="tabular-nums text-[#0F172A]">{{ $products->count() }}</strong>
+                        {{ $isLabView ? 'fasilitas laboratorium terverifikasi' : 'hasil riset unggulan' }}
                         <span class="mx-1.5 text-slate-300">|</span>
                         <span class="text-slate-400">Terverifikasi LPPM &amp; UPA-RTPU Politeknik Negeri Jakarta</span>
                     </span>
                 </div>
 
-                <a href="{{ route('public.katalog') }}"
+                <a href="{{ $resetFilterUrl }}"
                    class="inline-flex items-center gap-1.5 text-xs font-semibold text-[#00877A] hover:text-[#006E63] transition-colors {{ $hasActiveFilter ? '' : 'opacity-80' }}">
                     <svg width="14" height="14" class="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
                         <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"></path>
@@ -140,14 +171,15 @@
     </section>
 
     {{-- ===================================================================== --}}
-    {{-- GRID KARTU PRODUK 3 KOLOM (PERSIS MOCKUP)                             --}}
+    {{-- GRID KARTU PRODUK (3 KOLOM WEB / 2 KOLOM COMPACT PRINT)               --}}
     {{-- ===================================================================== --}}
     @if ($products->isNotEmpty())
-        <section class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+        <section data-public-product-grid class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 print:grid print:grid-cols-2 print:gap-3">
             @foreach ($products as $product)
                 @php
                     $meta = $productMetaMap[$product->id];
-                    $imageExists = $product->image_path && file_exists(public_path('storage/' . $product->image_path));
+                    $imageUrl = $product->resolved_image_url;
+                    $imageExists = $imageUrl !== null;
                     $displayPrice = (float) ($product->price_b2b > 0 ? $product->price_b2b : $product->price_b2c);
                     $showPrice = (bool) ($product->show_price ?? true);
                     $searchIndex = strtolower(implode(' ', array_filter([
@@ -164,16 +196,17 @@
 
                 <article data-public-product-card
                          data-search-text="{{ $searchIndex }}"
-                         class="group flex flex-col overflow-hidden rounded-xl border border-slate-200 bg-white transition-all duration-200 hover:-translate-y-0.5 hover:border-slate-300 hover:shadow-md">
+                         class="group break-inside-avoid flex flex-col overflow-hidden rounded-lg border border-slate-200/80 bg-white transition-all duration-300 hover:-translate-y-0.5 hover:border-slate-300 hover:shadow-md print:shadow-none">
 
                     {{-- Thumbnail Header --}}
-                    <div class="relative h-44 w-full overflow-hidden border-b border-slate-100 bg-[#0F172A]">
+                    <div class="relative h-44 print:h-32 w-full overflow-hidden border-b border-slate-100 bg-[#0F172A]">
                         @if ($imageExists)
-                            <img src="{{ asset('storage/' . $product->image_path) }}"
+                            <img src="{{ $imageUrl }}"
                                  alt="{{ $product->name }}"
-                                 class="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105">
+                                 loading="eager"
+                                 class="h-full w-full object-cover object-center transition-transform duration-300 group-hover:scale-105">
                         @else
-                            <div class="tech-grid-bg flex h-full w-full flex-col justify-between p-4 text-white">
+                            <div class="tech-grid-bg flex h-full w-full flex-col justify-between p-4 print:p-3 text-white">
                                 <div class="h-6"></div>
                                 <div class="flex items-center gap-3.5">
                                     <span class="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-white/10 border border-white/15 text-[#99D3CB]">
@@ -212,7 +245,7 @@
                         @endif
 
                         {{-- Floating Badges Pojok Kiri Atas & Kanan Atas (Persis Mockup) --}}
-                        <div class="absolute top-3 left-3 right-3 flex items-center justify-between gap-2">
+                        <div class="absolute top-3 left-3 right-3 print:top-2 print:left-2 print:right-2 flex items-center justify-between gap-2">
                             <div class="flex items-center gap-1.5 min-w-0">
                                 <span class="tabular-nums shrink-0 rounded-md bg-[#00877A] px-2 py-0.5 text-[10px] font-bold text-white shadow-xs">
                                     {{ $meta['trl_label'] }}
@@ -230,10 +263,10 @@
                     </div>
 
                     {{-- Card Body --}}
-                    <div class="flex flex-1 flex-col p-5">
+                    <div class="flex flex-1 flex-col p-5 print:p-3 print:space-y-1.5">
                         {{-- Unit / Lab PNJ --}}
-                        <div class="flex items-center gap-1.5 text-[11px] font-semibold text-[#00877A]">
-                            <svg width="13" height="13" class="h-3.5 w-3.5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                        <div class="flex items-center gap-1.5 text-[11px] print:text-[10px] font-semibold text-[#00877A]">
+                            <svg width="13" height="13" class="h-3.5 w-3.5 print:h-3 print:w-3 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
                                 <path d="M9 3h6"></path>
                                 <path d="M10 3v6L4.5 19a1.5 1.5 0 0 0 1.3 2.2h12.4a1.5 1.5 0 0 0 1.3-2.2L14 9V3"></path>
                             </svg>
@@ -241,27 +274,27 @@
                         </div>
 
                         {{-- Judul Produk --}}
-                        <h2 class="mt-1.5 line-clamp-2 text-[15px] font-bold leading-snug text-[#0F172A] group-hover:text-[#00877A] transition-colors">
+                        <h2 class="mt-1.5 print:mt-0.5 line-clamp-2 text-[15px] print:text-sm font-bold leading-snug text-[#0F172A] group-hover:text-[#00877A] transition-colors">
                             <a href="{{ route('public.katalog.detail', $product->id) }}">{{ $product->name }}</a>
                         </h2>
 
                         {{-- Deskripsi 2–3 baris --}}
-                        <p class="mt-2 line-clamp-2 text-xs leading-relaxed text-slate-500">
+                        <p class="mt-2 print:mt-0.5 line-clamp-2 text-xs print:text-[11px] leading-relaxed print:leading-snug text-slate-500">
                             {{ $product->description }}
                         </p>
 
                         {{-- Blok Harga Kondisional (Mengikuti $product->show_price) --}}
-                        <div class="mt-4 pt-3 border-t border-slate-100">
+                        <div class="mt-4 pt-3 print:mt-1.5 print:pt-1.5 border-t border-slate-100">
                             @if ($showPrice)
                                 <div class="flex items-baseline justify-between gap-2">
                                     <span class="text-[10px] font-semibold uppercase tracking-wider text-slate-400">Estimasi Tarif</span>
                                     <span class="text-[10px] font-semibold text-[#00877A]">Tarif Resmi BLU</span>
                                 </div>
                                 <div class="mt-0.5 flex items-baseline gap-1">
-                                    <span class="tabular-nums text-base font-extrabold tracking-tight text-[#0F172A]">
+                                    <span class="tabular-nums text-base print:text-sm font-extrabold tracking-tight text-[#0F172A]">
                                         Rp {{ number_format($displayPrice, 0, ',', '.') }}
                                     </span>
-                                    <span class="text-[11px] text-slate-400">/ {{ $meta['satuan'] }}</span>
+                                    <span class="text-[11px] print:text-[10px] text-slate-400">/ {{ $meta['satuan'] }}</span>
                                 </div>
                             @else
                                 <div class="flex items-center justify-between gap-2">
@@ -270,29 +303,29 @@
                                         Ajukan Penawaran
                                     </span>
                                 </div>
-                                <p class="mt-1 text-xs font-semibold text-slate-700">
+                                <p class="mt-1 text-xs print:text-[11px] font-semibold text-slate-700">
                                     Harga disesuaikan saat penerbitan Invoice
                                 </p>
                             @endif
                         </div>
 
                         {{-- Kotak Progress Bar Tingkat Kesiapan & Estimasi Waktu (Persis Mockup) --}}
-                        <div class="mt-3.5 rounded-lg border border-slate-100 bg-[#F8FAFC] p-3 space-y-2">
-                            <div class="flex items-center justify-between text-[11px]">
+                        <div class="mt-3.5 print:mt-1.5 rounded-lg border border-slate-100 bg-[#F8FAFC] p-3 print:p-2 space-y-2 print:space-y-1">
+                            <div class="flex items-center justify-between text-[11px] print:text-[10px]">
                                 <span class="text-slate-500">Tingkat Kesiapan:</span>
                                 <span class="tabular-nums font-bold text-[#00877A]">{{ $meta['readiness_pct'] }}%</span>
                             </div>
                             <div class="h-1.5 w-full overflow-hidden rounded-full bg-slate-200">
                                 <div class="h-full rounded-full bg-[#00877A]" style="width: {{ $meta['readiness_pct'] }}%;"></div>
                             </div>
-                            <div class="flex items-center justify-between pt-0.5 text-[11px]">
+                            <div class="flex items-center justify-between pt-0.5 text-[11px] print:text-[10px]">
                                 <span class="text-slate-500">Estimasi Waktu:</span>
                                 <span class="tabular-nums font-bold text-[#0F172A]">{{ $meta['estimasi'] }}</span>
                             </div>
                         </div>
 
-                        {{-- Action Row (Persis Mockup + Guest Gate) --}}
-                        <div class="mt-4 flex items-center gap-2 pt-1">
+                        {{-- Action Row (Web Only — Disembunyikan Saat Print Brosur) --}}
+                        <div class="no-print print:hidden mt-4 flex items-center gap-2 pt-1">
                             @if ($isMitra && Route::has('b2b.detail'))
                                 <a href="{{ route('b2b.detail', $product->id) }}"
                                    class="inline-flex flex-1 items-center justify-center gap-2 rounded-lg bg-[#00877A] hover:bg-[#006E63] px-4 py-2.5 text-xs font-semibold text-white transition-colors">
@@ -345,15 +378,19 @@
         </section>
 
         {{-- Live Search Empty State --}}
-        <div id="public-live-empty" class="hidden rounded-xl border border-slate-200 bg-white px-6 py-12 text-center">
+        <div id="public-live-empty" class="no-print print:hidden hidden rounded-lg border border-slate-200/80 bg-white px-6 py-12 text-center">
             <div class="mx-auto flex h-12 w-12 items-center justify-center rounded-xl bg-slate-100 text-slate-400">
                 <svg width="22" height="22" class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
                     <circle cx="11" cy="11" r="8"></circle>
                     <path d="m21 21-4.3-4.3"></path>
                 </svg>
             </div>
-            <h3 class="mt-3 text-sm font-bold text-[#0F172A]">Inovasi riset tidak ditemukan</h3>
-            <p class="mt-1 text-xs text-slate-500">Tidak ada produk katalog yang cocok dengan kata kunci pencarian Anda.</p>
+            <h3 class="mt-3 text-sm font-bold text-[#0F172A]">
+                {{ $isLabView ? 'Fasilitas laboratorium tidak ditemukan' : 'Inovasi riset tidak ditemukan' }}
+            </h3>
+            <p class="mt-1 text-xs text-slate-500">
+                {{ $isLabView ? 'Tidak ada fasilitas lab yang cocok dengan kata kunci pencarian Anda.' : 'Tidak ada produk katalog yang cocok dengan kata kunci pencarian Anda.' }}
+            </p>
             <button type="button"
                     onclick="if (window.pnjApplyPublicSearch) window.pnjApplyPublicSearch('', true);"
                     class="mt-4 inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-4 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50">
@@ -362,31 +399,35 @@
         </div>
     @else
         {{-- Server-side Empty State --}}
-        <section class="rounded-xl border border-slate-200 bg-white px-6 py-14 text-center">
+        <section class="rounded-lg border border-slate-200/80 bg-white px-6 py-14 text-center">
             <div class="mx-auto flex h-12 w-12 items-center justify-center rounded-xl bg-slate-100 text-slate-400">
                 <svg width="22" height="22" class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
                     <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path>
                 </svg>
             </div>
-            <h3 class="mt-3 text-sm font-bold text-[#0F172A]">Belum ada produk riset untuk filter tersebut</h3>
-            <p class="mt-1 text-xs text-slate-500">Ubah kategori, tingkat kesiapan (TRL), atau tipe pesanan untuk melihat katalog tayang lainnya.</p>
-            <a href="{{ route('public.katalog') }}"
+            <h3 class="mt-3 text-sm font-bold text-[#0F172A]">
+                {{ $isLabView ? 'Belum ada fasilitas laboratorium untuk filter tersebut' : 'Belum ada produk riset untuk filter tersebut' }}
+            </h3>
+            <p class="mt-1 text-xs text-slate-500">
+                {{ $isLabView ? 'Ubah kategori, tingkat kesiapan (TRL), atau kata kunci pencarian untuk melihat daftar fasilitas lab.' : 'Ubah kategori, tingkat kesiapan (TRL), atau tipe pesanan untuk melihat katalog tayang lainnya.' }}
+            </p>
+            <a href="{{ $resetFilterUrl }}"
                class="mt-4 inline-flex items-center gap-1.5 rounded-lg bg-[#00877A] hover:bg-[#006E63] px-4 py-2 text-xs font-semibold text-white transition-colors">
-                Tampilkan Semua Katalog
+                {{ $isLabView ? 'Tampilkan Semua Fasilitas Lab' : 'Tampilkan Semua Katalog' }}
             </a>
         </section>
     @endif
 
     {{-- ===================================================================== --}}
-    {{-- PAGINATION BAR (PERSIS MOCKUP)                                        --}}
+    {{-- PAGINATION BAR (WEB ONLY — HIDDEN SAAT PRINT)                         --}}
     {{-- ===================================================================== --}}
-    <section class="no-print flex flex-wrap items-center justify-between gap-3 border-t border-slate-200/80 pt-4 text-xs text-slate-500">
+    <section class="no-print print:hidden flex flex-wrap items-center justify-between gap-3 border-t border-slate-200/80 pt-4 text-xs text-slate-500">
         <p class="tabular-nums">
             @if ($products->total() > 0)
                 Menampilkan <strong class="text-[#0F172A]">{{ $products->firstItem() }} - {{ $products->lastItem() }}</strong>
-                dari <strong class="text-[#0F172A]">{{ $products->total() }}</strong> inovasi riset terdaftar
+                dari <strong class="text-[#0F172A]">{{ $products->total() }}</strong> {{ $isLabView ? 'fasilitas laboratorium terdaftar' : 'inovasi riset terdaftar' }}
             @else
-                Menampilkan <strong class="text-[#0F172A]">0</strong> dari <strong class="text-[#0F172A]">{{ $totalPublishedCount }}</strong> inovasi riset terdaftar
+                Menampilkan <strong class="text-[#0F172A]">0</strong> dari <strong class="text-[#0F172A]">{{ $totalPublishedCount }}</strong> {{ $isLabView ? 'fasilitas laboratorium terdaftar' : 'inovasi riset terdaftar' }}
             @endif
         </p>
 
@@ -429,9 +470,9 @@
     </section>
 
     {{-- ===================================================================== --}}
-    {{-- BANNER KUSTOMISASI / QUOTATION BAWAH (PERSIS MOCKUP)                  --}}
+    {{-- BANNER KUSTOMISASI / QUOTATION BAWAH (WEB ONLY — HIDDEN SAAT PRINT)   --}}
     {{-- ===================================================================== --}}
-    <section class="no-print rounded-xl border border-slate-200 bg-white p-5">
+    <section class="no-print print:hidden rounded-lg border border-slate-200/80 bg-white p-5">
         <div class="flex flex-wrap items-center justify-between gap-4">
             <div class="flex items-start sm:items-center gap-3.5">
                 <span class="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-[#E6F4F2] text-[#00877A]">

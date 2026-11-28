@@ -23,25 +23,37 @@ class PublicCatalogController extends Controller
         $orderType = $request->query('order_type');
         $trlFilter = $request->query('trl');
 
+        $isLabMode = $orderType === 'lab_reservation';
+
         $categories = Category::query()->orderBy('id')->get();
         $units = Unit::query()->orderBy('name')->get();
 
-        $query = Product::query()
-            ->with(['category', 'subCategory', 'unit'])
+        $baseQuery = Product::query()
             ->where('status', 'tayang');
+
+        if ($isLabMode) {
+            $baseQuery->where('order_type', 'lab_reservation');
+        } else {
+            $baseQuery->whereIn('order_type', ['ready_stock', 'pre_order']);
+        }
+
+        $totalPublishedCount = (clone $baseQuery)->count();
+
+        $query = (clone $baseQuery)
+            ->with(['category', 'subCategory', 'unit']);
 
         if ($categoryId) {
             $query->where('category_id', $categoryId);
         }
 
-        if ($orderType && in_array($orderType, ['ready_stock', 'pre_order', 'lab_reservation'], true)) {
+        if (! $isLabMode && $orderType && in_array($orderType, ['ready_stock', 'pre_order'], true)) {
             $query->where('order_type', $orderType);
         }
 
         if ($trlFilter && in_array((string) $trlFilter, ['5', '6', '7'], true)) {
             $matchingOrderTypes = match ((string) $trlFilter) {
-                '6' => ['pre_order'],
-                '7' => ['ready_stock', 'lab_reservation'],
+                '6' => $isLabMode ? [] : ['pre_order'],
+                '7' => $isLabMode ? ['lab_reservation'] : ['ready_stock'],
                 default => [],
             };
 
@@ -65,20 +77,19 @@ class PublicCatalogController extends Controller
 
         $products = $query
             ->orderBy('id')
-            ->paginate(9)
+            ->paginate(12)
             ->withQueryString();
-
-        $totalPublishedCount = Product::query()->where('status', 'tayang')->count();
 
         return view('public.katalog', [
             'products' => $products,
             'totalPublishedCount' => $totalPublishedCount,
+            'isLabMode' => $isLabMode,
             'categories' => $categories,
             'units' => $units,
             'filters' => [
                 'q' => $searchQuery,
                 'category_id' => $categoryId,
-                'order_type' => $orderType,
+                'order_type' => $isLabMode ? 'lab_reservation' : (in_array($orderType, ['ready_stock', 'pre_order'], true) ? $orderType : null),
                 'trl' => $trlFilter,
             ],
             'dashboardUrl' => $this->resolveDashboardUrl(Auth::user()),
@@ -183,10 +194,10 @@ class PublicCatalogController extends Controller
                 'order_label' => 'Reservasi Lab',
                 'order_pill' => 'bg-white/95 text-[#00877A] border-teal-200',
                 'order_dot' => 'bg-[#00877A]',
-                'estimasi' => 'Per Sesi (4 Jam)',
-                'satuan' => 'Sesi',
+                'estimasi' => 'Tarif Per Jam',
+                'satuan' => 'Jam',
                 'stok_label' => 'Slot Tersedia',
-                'cta_label' => 'Pesan Sekarang',
+                'cta_label' => 'Reservasi Lab',
             ],
             default => [
                 'trl_level' => 7,

@@ -51,19 +51,57 @@
                 linear-gradient(to bottom, rgba(255, 255, 255, 0.05) 1px, transparent 1px);
             background-size: 20px 20px;
         }
+        @page {
+            size: A4 portrait;
+            margin: 12mm;
+        }
         @media print {
-            aside, header, #public-guest-modal, .no-print {
+            * {
+                -webkit-print-color-adjust: exact !important;
+                print-color-adjust: exact !important;
+            }
+            html, body {
+                display: block !important;
+                height: auto !important;
+                min-height: 0 !important;
+                overflow: visible !important;
+                margin: 0 !important;
+                padding: 0 !important;
+                background: #FFFFFF !important;
+            }
+            aside, header, #public-sidebar-backdrop, #public-guest-modal, .no-print {
                 display: none !important;
             }
-            body {
-                background: #FFFFFF !important;
+            main {
+                display: block !important;
+                max-width: 100% !important;
+                height: auto !important;
+                min-height: 0 !important;
+                overflow: visible !important;
+                padding: 0 !important;
+                margin: 0 !important;
+            }
+            [data-public-product-grid] {
+                display: grid !important;
+                grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+                gap: 12px !important;
+            }
+            article[data-public-product-card] {
+                break-inside: avoid !important;
+                page-break-inside: avoid !important;
+                box-shadow: none !important;
+                transform: none !important;
+            }
+            img {
+                display: block !important;
+                max-width: 100% !important;
             }
         }
     </style>
 
     @stack('styles')
 </head>
-<body class="min-h-screen bg-[#F8FAFC] text-[#0F172A] antialiased">
+<body class="min-h-screen bg-[#F8FAFC] text-[#0F172A] antialiased print:block print:h-auto print:min-h-0 print:overflow-visible print:p-0 print:m-0 print:bg-white">
 @php
     $authUser = auth()->user();
     $isInternalAdmin = $authUser && in_array($authUser->role, ['rtpu', 'admin', 'p3m', 'pimpinan'], true);
@@ -74,17 +112,17 @@
     $resolvedDashboardUrl = $dashboardUrl ?? route('login');
 @endphp
 
-<div class="flex min-h-screen">
+<div class="flex min-h-screen print:block print:h-auto print:min-h-0 print:overflow-visible print:p-0 print:m-0 print:bg-white">
     {{-- ===================================================================== --}}
     {{-- MOBILE SIDEBAR BACKDROP                                               --}}
     {{-- ===================================================================== --}}
-    <div id="public-sidebar-backdrop" class="fixed inset-0 z-30 hidden bg-slate-900/40 lg:hidden"></div>
+    <div id="public-sidebar-backdrop" class="print:hidden fixed inset-0 z-30 hidden bg-slate-900/40 lg:hidden"></div>
 
     {{-- ===================================================================== --}}
     {{-- SIDEBAR KIRI BERSIH (#FFFFFF, border-r border-slate-200)              --}}
     {{-- ===================================================================== --}}
     <aside id="public-sidebar"
-           class="fixed inset-y-0 left-0 z-40 flex w-60 -translate-x-full flex-col border-r border-slate-200 bg-white transition-transform duration-200 lg:sticky lg:top-0 lg:h-screen lg:translate-x-0 shrink-0 select-none">
+           class="print:hidden fixed inset-y-0 left-0 z-40 flex w-60 -translate-x-full flex-col border-r border-slate-200 bg-white transition-transform duration-200 lg:sticky lg:top-0 lg:h-screen lg:translate-x-0 shrink-0 select-none">
 
         {{-- Brand Logo PNJ Prime --}}
         <div class="flex h-16 items-center justify-between px-5 border-b border-slate-100">
@@ -252,9 +290,9 @@
     {{-- ===================================================================== --}}
     {{-- MAIN WORKSPACE AREA                                                   --}}
     {{-- ===================================================================== --}}
-    <div class="flex min-h-screen min-w-0 flex-1 flex-col">
+    <div class="flex min-h-screen min-w-0 flex-1 flex-col print:block print:h-auto print:min-h-0 print:overflow-visible print:p-0 print:m-0 print:bg-white">
         {{-- Top Navbar (Persis Mockup) --}}
-        <header class="sticky top-0 z-20 flex h-16 items-center justify-between gap-4 border-b border-slate-200 bg-white px-4 sm:px-6 lg:px-8">
+        <header class="print:hidden sticky top-0 z-20 flex h-16 items-center justify-between gap-4 border-b border-slate-200 bg-white px-4 sm:px-6 lg:px-8">
             <div class="flex items-center gap-3 flex-1 min-w-0">
                 {{-- Mobile Menu Toggle --}}
                 <button type="button" id="public-sidebar-open"
@@ -269,6 +307,9 @@
 
                 {{-- Global Search Input (Ctrl+K, Real-Time & Server ?q=) --}}
                 <form action="{{ route('public.katalog') }}" method="GET" id="public-top-search-form" class="relative w-full max-w-md">
+                    @if (($isLabMode ?? false) || request()->query('order_type') === 'lab_reservation')
+                        <input type="hidden" name="order_type" value="lab_reservation">
+                    @endif
                     <svg width="16" height="16"
                          class="pointer-events-none absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-slate-400"
                          viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
@@ -369,7 +410,7 @@
         </header>
 
         {{-- Page Content --}}
-        <main class="mx-auto w-full max-w-[1280px] flex-1 px-4 sm:px-6 lg:px-8 py-6">
+        <main class="mx-auto w-full max-w-[1280px] flex-1 px-4 sm:px-6 lg:px-8 py-6 print:block print:h-auto print:min-h-0 print:max-w-none print:overflow-visible print:p-0 print:m-0 print:bg-white">
             @yield('content')
         </main>
     </div>
@@ -379,7 +420,7 @@
 {{-- MODAL GUEST GATE (AJAKAN LOGIN / DAFTAR SAAT MEMESAN ATAU KLIK MENU)      --}}
 {{-- ========================================================================= --}}
 <div id="public-guest-modal"
-     class="fixed inset-0 z-50 hidden items-center justify-center bg-[#0F172A]/55 p-4 backdrop-blur-[2px]"
+     class="print:hidden fixed inset-0 z-50 hidden items-center justify-center bg-[#0F172A]/55 p-4 backdrop-blur-[2px]"
      role="dialog"
      aria-modal="true"
      aria-labelledby="guest-gate-title">

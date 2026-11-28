@@ -62,4 +62,73 @@ class Product extends Model
     {
         return $this->hasMany(OrderItem::class);
     }
+
+    /**
+     * Resolve path relatif gambar di bawah public/ (mendukung public/images/products/*
+     * maupun upload Storage::disk('public') di public/storage/products/*) tanpa error prefix.
+     */
+    public function getResolvedImagePathAttribute(): ?string
+    {
+        $raw = trim((string) ($this->image_path ?? ''));
+        if ($raw === '') {
+            return null;
+        }
+
+        if (str_starts_with($raw, 'http://') || str_starts_with($raw, 'https://')) {
+            return $raw;
+        }
+
+        $normalized = ltrim(str_replace('\\', '/', $raw), '/');
+
+        if (is_file(public_path($normalized))) {
+            return $normalized;
+        }
+
+        if (! str_starts_with($normalized, 'storage/')) {
+            $storageRelative = 'storage/' . $normalized;
+            if (is_file(public_path($storageRelative))) {
+                return $storageRelative;
+            }
+        }
+
+        return null;
+    }
+
+    /**
+     * URL gambar siap pakai untuk tag <img> di seluruh view tanpa double slash atau broken path.
+     */
+    public function getResolvedImageUrlAttribute(): ?string
+    {
+        $resolved = $this->resolved_image_path;
+        if ($resolved === null) {
+            return null;
+        }
+
+        if (str_starts_with($resolved, 'http://') || str_starts_with($resolved, 'https://')) {
+            return $resolved;
+        }
+
+        return asset($resolved);
+    }
+
+    /**
+     * Data URI base64 agar gambar produk selalu termuat pada engine cetak / PDF offline.
+     */
+    public function getResolvedImageDataUriAttribute(): ?string
+    {
+        $resolved = $this->resolved_image_path;
+        if ($resolved === null || str_starts_with($resolved, 'http://') || str_starts_with($resolved, 'https://')) {
+            return $resolved;
+        }
+
+        $fullPath = public_path($resolved);
+        if (! is_file($fullPath)) {
+            return null;
+        }
+
+        $mime = mime_content_type($fullPath) ?: 'image/png';
+        $content = file_get_contents($fullPath);
+
+        return $content !== false ? 'data:' . $mime . ';base64,' . base64_encode($content) : null;
+    }
 }

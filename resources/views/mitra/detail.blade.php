@@ -36,7 +36,8 @@
     ];
 
     $meta = $orderTypeMeta[$product->order_type] ?? $orderTypeMeta['ready_stock'];
-    $imageExists = $product->image_path && file_exists(public_path('storage/' . $product->image_path));
+    $imageUrl = $product->resolved_image_url;
+    $imageExists = $imageUrl !== null;
 @endphp
 
 @section('content')
@@ -71,7 +72,7 @@
             <section class="overflow-hidden rounded-lg border border-slate-200/80 bg-white">
                 <div class="relative h-52 w-full border-b border-slate-100 bg-slate-900">
                     @if ($imageExists)
-                        <img src="{{ asset('storage/' . $product->image_path) }}"
+                        <img src="{{ $imageUrl }}"
                              alt="{{ $product->name }}"
                              class="h-full w-full object-cover">
                     @else
