@@ -51,9 +51,43 @@
                 linear-gradient(to bottom, rgba(255, 255, 255, 0.05) 1px, transparent 1px);
             background-size: 20px 20px;
         }
+        /* Collapsible Desktop Sticky Sidebar (w-64 <-> w-[72px]) */
+        @media (min-width: 1024px) {
+            #public-sidebar[data-collapsed="1"] .sidebar-label {
+                display: none;
+            }
+            #public-sidebar[data-collapsed="1"] .sidebar-brand-wrap {
+                justify-content: center;
+                padding-left: 0;
+                padding-right: 0;
+            }
+            #public-sidebar[data-collapsed="1"] .sidebar-nav {
+                padding-left: 0.5rem;
+                padding-right: 0.5rem;
+            }
+            #public-sidebar[data-collapsed="1"] .sidebar-nav-item {
+                justify-content: center;
+                padding-left: 0;
+                padding-right: 0;
+                border-left-width: 0;
+                border-radius: 0.5rem;
+            }
+            #public-sidebar[data-collapsed="1"] .sidebar-footer {
+                padding-left: 0.5rem;
+                padding-right: 0.5rem;
+                display: flex;
+                justify-content: center;
+            }
+            #public-sidebar[data-collapsed="1"] .sidebar-footer-expanded {
+                display: none;
+            }
+            #public-sidebar[data-collapsed="1"] .sidebar-footer-compact {
+                display: flex;
+            }
+        }
         @page {
             size: A4 portrait;
-            margin: 12mm;
+            margin: 10mm 11mm;
         }
         @media print {
             * {
@@ -69,7 +103,7 @@
                 padding: 0 !important;
                 background: #FFFFFF !important;
             }
-            aside, header, #public-sidebar-backdrop, #public-guest-modal, .no-print {
+            aside, header, #public-sidebar-backdrop, #public-guest-modal, #detail-lightbox-modal, #detail-doc-modal, .no-print {
                 display: none !important;
             }
             main {
@@ -81,6 +115,7 @@
                 padding: 0 !important;
                 margin: 0 !important;
             }
+            /* Cetak Brosur 2 Kolom Katalog (/katalog) — Dipertahankan Utuh */
             [data-public-product-grid] {
                 display: grid !important;
                 grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
@@ -91,6 +126,16 @@
                 page-break-inside: avoid !important;
                 box-shadow: none !important;
                 transform: none !important;
+            }
+            /* Cetak Brosur Detail Produk (/katalog/{product}) — Padat 2–3 Halaman A4 */
+            [data-detail-print-section] {
+                break-inside: avoid !important;
+                page-break-inside: avoid !important;
+                box-shadow: none !important;
+            }
+            [data-detail-print-table] tr {
+                break-inside: avoid !important;
+                page-break-inside: avoid !important;
             }
             img {
                 display: block !important;
@@ -110,33 +155,37 @@
     $navIdleClass = 'text-slate-600 font-medium border-l-[3px] border-transparent hover:bg-slate-50 hover:text-[#00877A] rounded-r-lg';
     $currentSearch = $filters['q'] ?? ($searchQuery ?? request()->query('q', ''));
     $resolvedDashboardUrl = $dashboardUrl ?? route('login');
+    $isDetailPage = request()->routeIs('public.katalog.detail') || trim($__env->yieldContent('sidebar_default_collapsed', '0')) === '1';
 @endphp
 
 <div class="flex min-h-screen print:block print:h-auto print:min-h-0 print:overflow-visible print:p-0 print:m-0 print:bg-white">
     {{-- ===================================================================== --}}
     {{-- MOBILE SIDEBAR BACKDROP                                               --}}
     {{-- ===================================================================== --}}
-    <div id="public-sidebar-backdrop" class="print:hidden fixed inset-0 z-30 hidden bg-slate-900/40 lg:hidden"></div>
+    <div id="public-sidebar-backdrop" class="print:hidden no-print fixed inset-0 z-30 hidden bg-slate-900/40 lg:hidden"></div>
 
     {{-- ===================================================================== --}}
-    {{-- SIDEBAR KIRI BERSIH (#FFFFFF, border-r border-slate-200)              --}}
+    {{-- COLLAPSIBLE STICKY SIDEBAR KIRI (w-64 <-> w-[72px])                   --}}
     {{-- ===================================================================== --}}
     <aside id="public-sidebar"
-           class="print:hidden fixed inset-y-0 left-0 z-40 flex w-60 -translate-x-full flex-col border-r border-slate-200 bg-white transition-transform duration-200 lg:sticky lg:top-0 lg:h-screen lg:translate-x-0 shrink-0 select-none">
+           data-is-detail="{{ $isDetailPage ? '1' : '0' }}"
+           data-collapsed="{{ $isDetailPage ? '1' : '0' }}"
+           class="print:hidden no-print fixed inset-y-0 left-0 z-40 flex w-64 {{ $isDetailPage ? 'lg:w-[72px]' : 'lg:w-64' }} -translate-x-full flex-col border-r border-slate-200 bg-white transition-all duration-300 lg:sticky lg:top-0 lg:h-screen lg:translate-x-0 shrink-0 select-none">
 
         {{-- Brand Logo PNJ Prime --}}
-        <div class="flex h-16 items-center justify-between px-5 border-b border-slate-100">
-            <a href="{{ route('public.katalog') }}" class="flex items-center gap-2.5">
+        <div class="sidebar-brand-wrap flex h-16 items-center justify-between px-5 border-b border-slate-100">
+            <a href="{{ route('public.katalog') }}" class="flex items-center gap-2.5 min-w-0" title="PNJ Prime — Katalog Riset & Inovasi">
                 <span class="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-[#00877A] text-white">
                     <svg width="18" height="18" class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
                         <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
                     </svg>
                 </span>
-                <span class="text-base font-bold tracking-tight text-[#00877A]">PNJ Prime</span>
+                <span class="sidebar-label truncate text-base font-bold tracking-tight text-[#00877A]">PNJ Prime</span>
             </a>
 
             <button type="button" id="public-sidebar-close"
                     class="lg:hidden rounded-lg p-1.5 text-slate-400 hover:bg-slate-100 hover:text-slate-600"
+                    title="Tutup navigasi"
                     aria-label="Tutup navigasi">
                 <svg width="18" height="18" class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
                     <line x1="18" y1="6" x2="6" y2="18"></line>
@@ -145,163 +194,212 @@
             </button>
         </div>
 
-        {{-- Menu Navigasi Utama (Role-Aware) --}}
-        <nav class="flex-1 space-y-1 overflow-y-auto py-4 pr-3 pl-2" aria-label="Navigasi Portal PNJ Prime">
+        {{-- Menu Navigasi Utama (Role-Aware & Tooltip Ready saat Menciut) --}}
+        <nav class="sidebar-nav flex-1 space-y-1 overflow-y-auto py-4 pr-3 pl-2" aria-label="Navigasi Portal PNJ Prime">
             {{-- Dashboard --}}
             @auth
                 <a href="{{ $resolvedDashboardUrl }}"
-                   class="flex items-center gap-3 px-3 py-2.5 text-[13px] transition-colors {{ $navIdleClass }}">
+                   title="{{ $isInternalAdmin ? 'Dashboard Admin' : 'Dashboard' }}"
+                   class="sidebar-nav-item flex items-center gap-3 px-3 py-2.5 text-[13px] transition-colors {{ $navIdleClass }}">
                     <svg width="16" height="16" class="h-4 w-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
                         <rect x="3" y="3" width="7" height="7" rx="1"></rect>
                         <rect x="14" y="3" width="7" height="7" rx="1"></rect>
                         <rect x="3" y="14" width="7" height="7" rx="1"></rect>
                         <rect x="14" y="14" width="7" height="7" rx="1"></rect>
                     </svg>
-                    <span>{{ $isInternalAdmin ? 'Dashboard Admin' : 'Dashboard' }}</span>
+                    <span class="sidebar-label truncate">{{ $isInternalAdmin ? 'Dashboard Admin' : 'Dashboard' }}</span>
                 </a>
             @else
                 <button type="button"
+                        title="Dashboard"
                         data-guest-gate
                         data-gate-title="Akses Dashboard Portal PNJ Prime"
                         data-gate-desc="Silakan masuk dengan akun Anda atau daftar sebagai Mitra Industri B2B untuk membuka Dashboard transaksi dan analitik."
-                        class="flex w-full items-center gap-3 px-3 py-2.5 text-left text-[13px] transition-colors {{ $navIdleClass }}">
+                        class="sidebar-nav-item flex w-full items-center gap-3 px-3 py-2.5 text-left text-[13px] transition-colors {{ $navIdleClass }}">
                     <svg width="16" height="16" class="h-4 w-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
                         <rect x="3" y="3" width="7" height="7" rx="1"></rect>
                         <rect x="14" y="3" width="7" height="7" rx="1"></rect>
                         <rect x="3" y="14" width="7" height="7" rx="1"></rect>
                         <rect x="14" y="14" width="7" height="7" rx="1"></rect>
                     </svg>
-                    <span>Dashboard</span>
+                    <span class="sidebar-label truncate">Dashboard</span>
                 </button>
             @endauth
 
-            {{-- Katalog Riset (Aktif Pill Teal Lembut) --}}
+            {{-- Katalog Riset --}}
             <a href="{{ route('public.katalog') }}"
-               class="flex items-center gap-3 px-3 py-2.5 text-[13px] transition-colors {{ $activeNav === 'katalog' ? $navActiveClass : $navIdleClass }}">
+               title="Katalog Riset"
+               class="sidebar-nav-item flex items-center gap-3 px-3 py-2.5 text-[13px] transition-colors {{ $activeNav === 'katalog' ? $navActiveClass : $navIdleClass }}">
                 <svg width="16" height="16" class="h-4 w-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
                     <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"></path>
                     <path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"></path>
                 </svg>
-                <span>Katalog Riset</span>
+                <span class="sidebar-label truncate">Katalog Riset</span>
             </a>
 
             {{-- Status Pesanan (Hanya untuk Guest & Pembeli, disembunyikan untuk Role Internal/Admin) --}}
             @if (! $isInternalAdmin)
                 @auth
                     <a href="{{ $authUser->role === 'mitra' && Route::has('b2b.dashboard') ? route('b2b.dashboard') . '#daftar-pesanan' : $resolvedDashboardUrl }}"
-                       class="flex items-center gap-3 px-3 py-2.5 text-[13px] transition-colors {{ $navIdleClass }}">
+                       title="Status Pesanan"
+                       class="sidebar-nav-item flex items-center gap-3 px-3 py-2.5 text-[13px] transition-colors {{ $navIdleClass }}">
                         <svg width="16" height="16" class="h-4 w-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
                             <path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2"></path>
                             <rect x="9" y="3" width="6" height="4" rx="1"></rect>
                             <path d="m9 14 2 2 4-4"></path>
                         </svg>
-                        <span>Status Pesanan</span>
+                        <span class="sidebar-label truncate">Status Pesanan</span>
                     </a>
                 @else
                     <button type="button"
+                            title="Status Pesanan"
                             data-guest-gate
                             data-gate-title="Pantau Status Pesanan & Invoice"
                             data-gate-desc="Masuk ke akun PNJ Prime Anda untuk melacak progres pesanan, jadwal produksi, dan status pembayaran 100% Lunas."
-                            class="flex w-full items-center gap-3 px-3 py-2.5 text-left text-[13px] transition-colors {{ $navIdleClass }}">
+                            class="sidebar-nav-item flex w-full items-center gap-3 px-3 py-2.5 text-left text-[13px] transition-colors {{ $navIdleClass }}">
                         <svg width="16" height="16" class="h-4 w-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
                             <path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2"></path>
                             <rect x="9" y="3" width="6" height="4" rx="1"></rect>
                             <path d="m9 14 2 2 4-4"></path>
                         </svg>
-                        <span>Status Pesanan</span>
+                        <span class="sidebar-label truncate">Status Pesanan</span>
                     </button>
                 @endauth
             @endif
 
             {{-- Sewa Fasilitas Lab --}}
             <a href="{{ route('public.katalog', ['order_type' => 'lab_reservation']) }}"
-               class="flex items-center gap-3 px-3 py-2.5 text-[13px] transition-colors {{ $activeNav === 'lab' ? $navActiveClass : $navIdleClass }}">
+               title="Sewa Fasilitas Lab"
+               class="sidebar-nav-item flex items-center gap-3 px-3 py-2.5 text-[13px] transition-colors {{ $activeNav === 'lab' ? $navActiveClass : $navIdleClass }}">
                 <svg width="16" height="16" class="h-4 w-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
                     <path d="M9 3h6"></path>
                     <path d="M10 3v6L4.5 19a1.5 1.5 0 0 0 1.3 2.2h12.4a1.5 1.5 0 0 0 1.3-2.2L14 9V3"></path>
                     <path d="M7.5 14h9"></path>
                 </svg>
-                <span>Sewa Fasilitas Lab</span>
+                <span class="sidebar-label truncate">Sewa Fasilitas Lab</span>
             </a>
 
-            {{-- Inbox / Pesan & Pengaturan Akun (Hanya untuk Guest & Pembeli, disembunyikan untuk Role Internal/Admin) --}}
+            {{-- Inbox / Pesan & Pengaturan Akun (Hanya untuk Guest & Pembeli) --}}
             @if (! $isInternalAdmin)
                 @auth
                     <a href="{{ $resolvedDashboardUrl }}"
-                       class="flex items-center gap-3 px-3 py-2.5 text-[13px] transition-colors {{ $navIdleClass }}">
+                       title="Inbox / Pesan"
+                       class="sidebar-nav-item flex items-center gap-3 px-3 py-2.5 text-[13px] transition-colors {{ $navIdleClass }}">
                         <svg width="16" height="16" class="h-4 w-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
                             <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path>
                             <polyline points="22,6 12,13 2,6"></polyline>
                         </svg>
-                        <span>Inbox / Pesan</span>
+                        <span class="sidebar-label truncate">Inbox / Pesan</span>
                     </a>
                 @else
                     <button type="button"
+                            title="Inbox / Pesan"
                             data-guest-gate
                             data-gate-title="Inbox & Komunikasi Resmi RTPU"
                             data-gate-desc="Silakan masuk atau daftar akun untuk mengakses pesan kurasi teknis, penawaran resmi, dan notifikasi pesanan."
-                            class="flex w-full items-center gap-3 px-3 py-2.5 text-left text-[13px] transition-colors {{ $navIdleClass }}">
+                            class="sidebar-nav-item flex w-full items-center gap-3 px-3 py-2.5 text-left text-[13px] transition-colors {{ $navIdleClass }}">
                         <svg width="16" height="16" class="h-4 w-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
                             <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path>
                             <polyline points="22,6 12,13 2,6"></polyline>
                         </svg>
-                        <span>Inbox / Pesan</span>
+                        <span class="sidebar-label truncate">Inbox / Pesan</span>
                     </button>
                 @endauth
 
                 @auth
                     <a href="{{ $authUser->role === 'mitra' && Route::has('b2b.profil') ? route('b2b.profil') : $resolvedDashboardUrl }}"
-                       class="flex items-center gap-3 px-3 py-2.5 text-[13px] transition-colors {{ $navIdleClass }}">
+                       title="Pengaturan Akun"
+                       class="sidebar-nav-item flex items-center gap-3 px-3 py-2.5 text-[13px] transition-colors {{ $navIdleClass }}">
                         <svg width="16" height="16" class="h-4 w-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
                             <circle cx="12" cy="12" r="3"></circle>
                             <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
                         </svg>
-                        <span>Pengaturan Akun</span>
+                        <span class="sidebar-label truncate">Pengaturan Akun</span>
                     </a>
                 @else
                     <button type="button"
+                            title="Pengaturan Akun"
                             data-guest-gate
                             data-gate-title="Pengaturan Akun & Profil Legalitas"
                             data-gate-desc="Masuk atau daftar sebagai Mitra Industri B2B untuk mengelola profil perusahaan, NPWP, NIB, dan keamanan akun."
-                            class="flex w-full items-center gap-3 px-3 py-2.5 text-left text-[13px] transition-colors {{ $navIdleClass }}">
+                            class="sidebar-nav-item flex w-full items-center gap-3 px-3 py-2.5 text-left text-[13px] transition-colors {{ $navIdleClass }}">
                         <svg width="16" height="16" class="h-4 w-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
                             <circle cx="12" cy="12" r="3"></circle>
                             <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
                         </svg>
-                        <span>Pengaturan Akun</span>
+                        <span class="sidebar-label truncate">Pengaturan Akun</span>
                     </button>
                 @endauth
             @endif
         </nav>
 
-        {{-- Footer Sidebar Kiri Bawah (Persis Mockup) --}}
-        <div class="border-t border-slate-100 px-5 py-3.5 text-[11px] text-slate-500">
-            <div class="flex items-center justify-between gap-2">
-                <span class="inline-flex items-center gap-1.5 font-medium text-slate-600">
-                    <span class="h-2 w-2 rounded-full bg-emerald-500"></span>
-                    System Online
-                </span>
-                <span class="tabular-nums text-[10px] text-slate-400">v2.4 Enterprise</span>
+        {{-- Footer Sidebar Kiri Bawah --}}
+        <div class="sidebar-footer border-t border-slate-100 px-5 py-3.5 text-[11px] text-slate-500">
+            <div class="sidebar-footer-expanded w-full">
+                <div class="flex items-center justify-between gap-2">
+                    <span class="inline-flex items-center gap-1.5 font-medium text-slate-600">
+                        <span class="h-2 w-2 rounded-full bg-emerald-500"></span>
+                        System Online
+                    </span>
+                    <span class="tabular-nums text-[10px] text-slate-400">v2.4 Enterprise</span>
+                </div>
+                <p class="mt-1 text-[10px] text-slate-400">PNJ Prime Enterprise Portal</p>
             </div>
-            <p class="mt-1 text-[10px] text-slate-400">PNJ Prime Enterprise Portal</p>
+            <div class="sidebar-footer-compact hidden items-center justify-center" title="System Online • v2.4 Enterprise">
+                <span class="h-2.5 w-2.5 rounded-full bg-emerald-500 ring-4 ring-emerald-50"></span>
+            </div>
         </div>
     </aside>
+
+    {{-- Sinkronisasi instan preferensi sidebar dari localStorage (tanpa kedipan di /katalog) --}}
+    <script>
+        (function () {
+            const sb = document.getElementById('public-sidebar');
+            if (!sb) return;
+            const isDetail = sb.getAttribute('data-is-detail') === '1';
+            if (!isDetail) {
+                try {
+                    const saved = localStorage.getItem('pnj_public_sidebar_collapsed');
+                    if (saved === '1') {
+                        sb.setAttribute('data-collapsed', '1');
+                        sb.classList.remove('lg:w-64');
+                        sb.classList.add('lg:w-[72px]');
+                    }
+                } catch (e) {}
+            }
+        })();
+    </script>
 
     {{-- ===================================================================== --}}
     {{-- MAIN WORKSPACE AREA                                                   --}}
     {{-- ===================================================================== --}}
     <div class="flex min-h-screen min-w-0 flex-1 flex-col print:block print:h-auto print:min-h-0 print:overflow-visible print:p-0 print:m-0 print:bg-white">
-        {{-- Top Navbar (Persis Mockup) --}}
-        <header class="print:hidden sticky top-0 z-20 flex h-16 items-center justify-between gap-4 border-b border-slate-200 bg-white px-4 sm:px-6 lg:px-8">
+        {{-- Top Navbar --}}
+        <header class="print:hidden no-print sticky top-0 z-20 flex h-16 items-center justify-between gap-4 border-b border-slate-200 bg-white px-4 sm:px-6 lg:px-8">
             <div class="flex items-center gap-3 flex-1 min-w-0">
                 {{-- Mobile Menu Toggle --}}
                 <button type="button" id="public-sidebar-open"
                         class="lg:hidden inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-50"
+                        title="Buka menu navigasi"
                         aria-label="Buka menu navigasi">
                     <svg width="18" height="18" class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
                         <line x1="3" y1="6" x2="21" y2="6"></line>
                         <line x1="3" y1="12" x2="21" y2="12"></line>
                         <line x1="3" y1="18" x2="21" y2="18"></line>
+                    </svg>
+                </button>
+
+                {{-- Desktop Collapsible Sidebar Toggle (w-64 <-> w-[72px]) --}}
+                <button type="button"
+                        id="public-sidebar-collapse-btn"
+                        data-sidebar-toggle
+                        title="{{ $isDetailPage ? 'Perluas Sidebar' : 'Ciutkan Sidebar' }}"
+                        aria-label="Buka atau tutup sidebar"
+                        aria-expanded="{{ $isDetailPage ? 'false' : 'true' }}"
+                        class="hidden lg:inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-600 hover:border-[#00877A] hover:bg-[#E6F4F2]/50 hover:text-[#00877A] active:scale-95 transition-all">
+                    <svg width="16" height="16" class="h-4 w-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                        <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                        <line x1="9" y1="3" x2="9" y2="21"></line>
                     </svg>
                 </button>
 
@@ -344,6 +442,7 @@
                 <div class="relative">
                     <button type="button"
                             id="public-help-btn"
+                            title="Pusat Layanan UPA-RTPU PNJ"
                             class="flex h-8 w-8 items-center justify-center rounded-lg text-slate-500 hover:bg-slate-100 hover:text-[#00877A] transition-colors"
                             aria-label="Bantuan Katalog PNJ Prime">
                         <svg width="18" height="18" class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
@@ -367,7 +466,6 @@
                 <span class="hidden sm:inline-block h-5 w-px bg-slate-200" aria-hidden="true"></span>
 
                 @auth
-                    {{-- Jika User Sudah Login: Nama User + Tombol Buka Dashboard + Tombol Keluar Cepat --}}
                     <div class="hidden md:block text-right leading-tight">
                         <p class="text-xs font-bold text-[#0F172A] max-w-[160px] truncate">{{ $authUser->nama_lengkap }}</p>
                         <p class="text-[10px] font-semibold uppercase tracking-wide text-[#00877A]">{{ strtoupper($authUser->role) }}</p>
@@ -395,7 +493,6 @@
                         </button>
                     </form>
                 @else
-                    {{-- Guest: 2 Tombol Kanan Tegas Masuk / Login & Daftar --}}
                     <a href="{{ route('login') }}"
                        class="inline-flex h-9 items-center justify-center rounded-lg bg-[#00877A] hover:bg-[#006E63] px-4 text-xs font-semibold text-white transition-colors">
                         Masuk / Login
@@ -420,7 +517,7 @@
 {{-- MODAL GUEST GATE (AJAKAN LOGIN / DAFTAR SAAT MEMESAN ATAU KLIK MENU)      --}}
 {{-- ========================================================================= --}}
 <div id="public-guest-modal"
-     class="print:hidden fixed inset-0 z-50 hidden items-center justify-center bg-[#0F172A]/55 p-4 backdrop-blur-[2px]"
+     class="print:hidden no-print fixed inset-0 z-50 hidden items-center justify-center bg-[#0F172A]/55 p-4 backdrop-blur-[2px]"
      role="dialog"
      aria-modal="true"
      aria-labelledby="guest-gate-title">
@@ -497,11 +594,12 @@
 
 <script>
     (function () {
-        // Mobile Sidebar Drawer
+        // 1. Mobile Sidebar Drawer
         const sidebar = document.getElementById('public-sidebar');
         const backdrop = document.getElementById('public-sidebar-backdrop');
         const openSidebarBtn = document.getElementById('public-sidebar-open');
         const closeSidebarBtn = document.getElementById('public-sidebar-close');
+        const collapseBtn = document.getElementById('public-sidebar-collapse-btn');
 
         function toggleSidebar(show) {
             if (!sidebar || !backdrop) return;
@@ -513,7 +611,47 @@
         if (closeSidebarBtn) closeSidebarBtn.addEventListener('click', function () { toggleSidebar(false); });
         if (backdrop) backdrop.addEventListener('click', function () { toggleSidebar(false); });
 
-        // Help Popover
+        // 2. Desktop Collapsible Sticky Sidebar (w-64 <-> w-[72px]) + localStorage
+        const STORAGE_KEY = 'pnj_public_sidebar_collapsed';
+        const isDetailPage = sidebar && sidebar.getAttribute('data-is-detail') === '1';
+
+        function applySidebarCollapsed(collapsed, persist) {
+            if (!sidebar) return;
+            sidebar.setAttribute('data-collapsed', collapsed ? '1' : '0');
+            sidebar.classList.toggle('lg:w-[72px]', collapsed);
+            sidebar.classList.toggle('lg:w-64', !collapsed);
+            if (collapseBtn) {
+                collapseBtn.setAttribute('aria-expanded', collapsed ? 'false' : 'true');
+                collapseBtn.setAttribute('title', collapsed ? 'Perluas Sidebar' : 'Ciutkan Sidebar');
+            }
+            if (persist && !isDetailPage) {
+                try {
+                    localStorage.setItem(STORAGE_KEY, collapsed ? '1' : '0');
+                } catch (e) {}
+            }
+        }
+
+        if (sidebar) {
+            if (isDetailPage) {
+                // Halaman Detail Produk selalu default menciut agar area Video & Galeri lega
+                applySidebarCollapsed(true, false);
+            } else {
+                let savedCollapsed = false;
+                try {
+                    savedCollapsed = localStorage.getItem(STORAGE_KEY) === '1';
+                } catch (e) {}
+                applySidebarCollapsed(savedCollapsed, false);
+            }
+        }
+
+        if (collapseBtn && sidebar) {
+            collapseBtn.addEventListener('click', function () {
+                const currentlyCollapsed = sidebar.getAttribute('data-collapsed') === '1';
+                applySidebarCollapsed(!currentlyCollapsed, !isDetailPage);
+            });
+        }
+
+        // 3. Help Popover
         const helpBtn = document.getElementById('public-help-btn');
         const helpPopover = document.getElementById('public-help-popover');
         if (helpBtn && helpPopover) {
@@ -528,7 +666,7 @@
             });
         }
 
-        // Guest Gate Modal
+        // 4. Guest Gate Modal
         const modal = document.getElementById('public-guest-modal');
         const closeModalBtn = document.getElementById('guest-gate-close');
         const titleEl = document.getElementById('guest-gate-title');
@@ -584,7 +722,7 @@
             });
         }
 
-        // Top Search (Real-time + Ctrl+K + Server ?q=)
+        // 5. Top Search (Real-time + Ctrl+K + Server ?q=)
         const topSearch = document.getElementById('public-global-search');
         const searchClear = document.getElementById('public-search-clear');
         const searchKbd = document.getElementById('public-search-kbd');

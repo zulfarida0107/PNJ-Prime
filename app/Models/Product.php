@@ -23,6 +23,7 @@ class Product extends Model
         'show_price',
         'stock',
         'image_path',
+        'video_url',
         'status',
         'curation_notes',
     ];
@@ -130,5 +131,51 @@ class Product extends Model
         $content = file_get_contents($fullPath);
 
         return $content !== false ? 'data:' . $mime . ';base64,' . base64_encode($content) : null;
+    }
+
+    /**
+     * Ekstrak ID video YouTube (11 karakter) dari berbagai format URL YouTube
+     * (youtu.be/{id}, youtube.com/watch?v={id}, youtube.com/embed/{id}, youtube.com/shorts/{id}).
+     */
+    protected function extractYoutubeVideoId(?string $url): ?string
+    {
+        $raw = trim((string) ($url ?? ''));
+        if ($raw === '') {
+            return null;
+        }
+
+        $patterns = [
+            '~(?:youtube\.com|youtube-nocookie\.com)/(?:embed|shorts|live|v)/([a-zA-Z0-9_-]{11})~i',
+            '~youtu\.be/([a-zA-Z0-9_-]{11})~i',
+            '~[?&]v=([a-zA-Z0-9_-]{11})~i',
+        ];
+
+        foreach ($patterns as $pattern) {
+            if (preg_match($pattern, $raw, $matches) === 1 && ! empty($matches[1])) {
+                return $matches[1];
+            }
+        }
+
+        return null;
+    }
+
+    /**
+     * URL YouTube embed siap pakai untuk <iframe> (dengan fallback video resmi PNJ jika kosong).
+     */
+    public function getResolvedEmbedVideoUrlAttribute(): string
+    {
+        $videoId = $this->extractYoutubeVideoId($this->video_url) ?: 'Im00a5ZL46I';
+
+        return 'https://www.youtube.com/embed/' . $videoId . '?rel=0';
+    }
+
+    /**
+     * URL YouTube publik (watch) untuk keperluan tampilan cetak PDF / tautan langsung.
+     */
+    public function getResolvedWatchVideoUrlAttribute(): string
+    {
+        $videoId = $this->extractYoutubeVideoId($this->video_url) ?: 'Im00a5ZL46I';
+
+        return 'https://www.youtube.com/watch?v=' . $videoId;
     }
 }
