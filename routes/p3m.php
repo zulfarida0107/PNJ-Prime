@@ -31,6 +31,7 @@ Route::middleware(['auth'])
         Route::get('/riwayat', [AdminP3MController::class, 'riwayat'])->name('riwayat');
         Route::get('/ekspor', [AdminP3MController::class, 'exportCsv'])->name('export');
         Route::get('/cetak-laporan', [AdminP3MController::class, 'printReport'])->name('print');
+        Route::get('/sk/{product}', [AdminP3MController::class, 'printSk'])->name('print-sk');
     });
 
 // Alias singkat /p3m -> redirect ke Dashboard Admin P3M

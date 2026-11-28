@@ -225,11 +225,11 @@
         <div class="px-5 py-3.5 border-t border-slate-100 bg-slate-50/70 flex items-center justify-between gap-3 rounded-b-2xl">
             <button type="button" onclick="closeModal('modalApprovedArchive')" class="text-[12px] font-semibold text-slate-600 hover:text-slate-900">Tutup Jendela</button>
             <div class="flex items-center gap-2">
-                <button type="button" onclick="window.print()"
-                        class="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg bg-[#00796B] hover:bg-[#00695C] text-white text-[12px] font-semibold shadow-sm transition-all active:scale-95">
+                <a id="appPrintSkLink" href="#" target="_blank" rel="noopener noreferrer"
+                   class="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg bg-[#0F766E] hover:bg-[#115E59] text-white text-[12px] font-semibold shadow-sm transition-all active:scale-95">
                     <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
                     <span>Cetak Salinan SK Resmi (.PDF)</span>
-                </button>
+                </a>
             </div>
         </div>
     </div>
@@ -523,6 +523,8 @@
 </div>
 
 <script>
+    const skPrintUrlTemplate = @json(route('admin.p3m.print-sk', ['product' => '__PRODUCT_ID__']));
+
     function openLogoutModal() {
         document.getElementById('modalLogoutConfirm').classList.remove('hidden');
     }
@@ -577,6 +579,10 @@
             document.getElementById('appUpdatedAt').textContent = data.updated_at;
             document.getElementById('appCatalogCode').textContent = '#KAT-2026-' + String(data.id).padStart(3, '0');
             document.getElementById('appNotes').textContent = data.curation_notes || 'Rekomendasi penetapan tarif diterima tanpa catatan revisi.';
+            const skLink = document.getElementById('appPrintSkLink');
+            if (skLink) {
+                skLink.href = skPrintUrlTemplate.replace('__PRODUCT_ID__', encodeURIComponent(data.id));
+            }
             document.getElementById('modalApprovedArchive').classList.remove('hidden');
             return;
         }

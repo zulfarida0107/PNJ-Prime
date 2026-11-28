@@ -202,37 +202,6 @@
             color: #0F172A;
         }
 
-        /* Ringkasan Status */
-        .summary-grid {
-            display: grid;
-            grid-template-columns: repeat(6, 1fr);
-            gap: 8px;
-            margin-bottom: 14px;
-        }
-
-        .summary-box {
-            border: 1px solid #CBD5E1;
-            border-radius: 6px;
-            padding: 7px 10px;
-            background: #F8FAFC;
-        }
-
-        .summary-label {
-            font-size: 9px;
-            font-weight: 600;
-            text-transform: uppercase;
-            letter-spacing: 0.4px;
-            color: #475569;
-            margin: 0 0 2px 0;
-        }
-
-        .summary-value {
-            font-size: 15px;
-            font-weight: 800;
-            color: #0F172A;
-            margin: 0;
-        }
-
         /* Tabel Laporan */
         table {
             width: 100%;
@@ -383,34 +352,6 @@
             <div class="report-meta tabular-nums">
                 <div>Tanggal Cetak: <strong>{{ $printedAt->translatedFormat('d F Y, H:i') }} WIB</strong></div>
                 <div>Dicetak Oleh: <strong>{{ $portalUser->name ?? 'Admin P3M' }}</strong></div>
-            </div>
-        </div>
-
-        {{-- Ringkasan Total Produk per Status --}}
-        <div class="summary-grid tabular-nums">
-            <div class="summary-box">
-                <p class="summary-label">Total Tercatat</p>
-                <p class="summary-value">{{ $summary['total'] }}</p>
-            </div>
-            <div class="summary-box">
-                <p class="summary-label">Antrean RTPU / SK</p>
-                <p class="summary-value">{{ $summary['menunggu'] }}</p>
-            </div>
-            <div class="summary-box">
-                <p class="summary-label">Perlu Revisi</p>
-                <p class="summary-value">{{ $summary['revisi'] }}</p>
-            </div>
-            <div class="summary-box">
-                <p class="summary-label">Disetujui &amp; Tayang</p>
-                <p class="summary-value">{{ $summary['tayang'] }}</p>
-            </div>
-            <div class="summary-box">
-                <p class="summary-label">Ditolak / Batal</p>
-                <p class="summary-value">{{ $summary['ditolak'] }}</p>
-            </div>
-            <div class="summary-box">
-                <p class="summary-label">Draf</p>
-                <p class="summary-value">{{ $summary['draft'] }}</p>
             </div>
         </div>
 

@@ -596,6 +596,35 @@ class AdminP3MController extends Controller
     }
 
     /**
+     * Halaman Cetak Khusus Salinan SK Tarif Resmi (Portrait A4 dengan Kop Surat UPA-RTPU PNJ).
+     */
+    public function printSk(Product $product): View
+    {
+        $portalUser = $this->resolvePortalUser();
+        $product->load(['unit', 'category', 'subCategory', 'submitter']);
+
+        $hpp = (float) $product->hpp;
+        $priceB2c = (float) $product->price_b2c;
+        $priceB2b = (float) $product->price_b2b;
+        $marginAmount = max(0, $priceB2c - $hpp);
+        $marginPct = $priceB2c > 0 ? round(($marginAmount / $priceB2c) * 100, 1) : 0.0;
+
+        $skNumber = sprintf('SK-RTPU/PNJ/%s/%03d', now()->format('Y'), $product->id);
+        $catalogCode = sprintf('#KAT-%s-%03d', now()->format('Y'), $product->id);
+
+        return view('admin-p3m.pdf.sk-tarif', [
+            'portalUser' => $portalUser,
+            'product' => $product,
+            'skNumber' => $skNumber,
+            'catalogCode' => $catalogCode,
+            'marginAmount' => $marginAmount,
+            'marginPct' => $marginPct,
+            'approvedAt' => $product->updated_at ?? now(),
+            'printedAt' => now(),
+        ]);
+    }
+
+    /**
      * Ekspor data pengajuan produk ke CSV (kompatibel Excel).
      */
     public function exportCsv(Request $request): StreamedResponse
